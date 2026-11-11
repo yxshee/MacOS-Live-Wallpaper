@@ -40,6 +40,10 @@ top of main.metal for the full list of changes. In short:
 MIT License
 
 Copyright (c) Dimension Almios
+Copyright (c)2014 David Hoskins (the hash function; see above)
+
+(The shader's header says only "MIT licence" and names its author; the first
+copyright line above is written from that attribution.)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

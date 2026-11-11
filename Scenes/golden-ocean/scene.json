@@ -5,5 +5,6 @@
   "licence": "MIT",
   "style": "nature",
   "maxFPS": 10,
-  "scale": 0.4
+  "scale": 0.4,
+  "also": "the AgX tone-map fit by Benjamin Wrensch (MIT)"
 }

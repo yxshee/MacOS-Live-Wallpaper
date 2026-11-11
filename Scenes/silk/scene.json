@@ -5,5 +5,6 @@
   "licence": "MIT",
   "style": "abstract",
   "maxFPS": 15,
-  "scale": 0.5
+  "scale": 0.5,
+  "also": "a domain-warp layout from an article by Inigo Quilez (MIT)"
 }

@@ -33,7 +33,7 @@ A note on one credit inside the author's code. The hash function N13() is
 marked in the author's own comment as "from DAVE HOSKINS" (his "Hash without
 Sine"). It is a few lines of arithmetic and is kept exactly as the author wrote
 it. A copy of Dave Hoskins' own shader source found in a third-party archive
-(github.com/tmsampson/enginejs, shader_joy/resources/shadertoy-downloader/
+(github.com/tmsampson/enginejs, tools/shader_joy/resources/shadertoy-downloader/
 shaders/Dave_Hoskins/Hash without Sine.fs) carries the header "Creative Commons
 Attribution-ShareAlike 4.0 International Public License. Created by David
 Hoskins." That is a different licence from the one on this shader, and it could

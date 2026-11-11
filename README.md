@@ -24,6 +24,8 @@ It also carries a library of 26 scenes by other authors, ported from open collec
 
 ![The 26 imported scenes](docs/library.jpg)
 
+*A frame from each scene. Every frame is under its scene's licence; the Auroras, Heartfelt, Luminescence, Mountain Peak and Seascape frames are CC BY-NC-SA 3.0.*
+
 Every one of these was written by someone else and published under a licence that allows it to be shared. Each has been ported to Metal, credited, and tuned so that it stays within this app's energy budget. They are grouped in the menu as Nature, Stylised, Abstract, Cosy and Sci-Fi; the menu shows each scene's author and licence and links to the original.
 
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists them all. Five may not be used commercially; see [Licences](#licences).
@@ -125,8 +127,8 @@ Bug reports, new scenes and reports from hardware that has not been tried are al
 
 ## Licences
 
-The app's own code is under the [MIT licence](LICENSE).
+The app's own code, which is everything outside `Scenes/`, is under the [MIT licence](LICENSE). That licence does not cover the scenes.
 
 The imported scenes keep their authors' licences: MIT, CC0, or Creative Commons Attribution-NonCommercial-ShareAlike. Each scene's folder under `Scenes/` holds its licence, its credit and a note of what was changed in porting it (and, where a scene uses a small helper function by someone else, that person's notice too), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists them together.
 
-Five scenes (Auroras, Heartfelt, Luminescence, Mountain Peak and Seascape) are non-commercial: free to use, share and adapt with credit, but not for commercial purposes. This app is free and carries no advertising, which is why it may include them. If you reuse this project in anything commercial, build with `./scripts/build-app.sh --permissive-only`, which leaves them out; [Scenes/NONCOMMERCIAL.md](Scenes/NONCOMMERCIAL.md) has the details.
+Five scenes (Auroras, Heartfelt, Luminescence, Mountain Peak and Seascape) are non-commercial: free to use, share and adapt with credit, but not for commercial purposes, and anything adapted from them must carry the same licence. This app is free, carries no advertising and takes no payment, and on that footing it includes them. If that ever changes, or if you reuse this project in anything commercial, build with `./scripts/build-app.sh --permissive-only`, which leaves them out; [Scenes/NONCOMMERCIAL.md](Scenes/NONCOMMERCIAL.md) has the details.

@@ -14,6 +14,9 @@ STYLES = [("nature", "Nature"), ("stylised", "Stylised"), ("abstract", "Abstract
 KNOWN_STYLES = {key for key, _ in STYLES}
 
 
+HOSKINS = (ROOT / "scripts" / "notices" / "hoskins-mit.txt").read_text()
+
+
 def scenes():
     found = []
     for manifest in sorted((ROOT / "Scenes").glob("*/scene.json")):
@@ -56,6 +59,20 @@ def notices(all_scenes):
         out += [f"## {title}", "", "| Scene | Author | Licence | Source |", "|---|---|---|---|"]
         out += [row(s) for s in group]
         out.append("")
+    extra = sorted((s for s in all_scenes if s.get("also")), key=lambda s: s["title"].lower())
+    if extra:
+        out += ["## Other people's work inside these scenes", "",
+                "Some scenes contain a piece by someone other than their author: a helper function, or measured data. "
+                "Each keeps its own terms, and its notice is in the scene's LICENSE file.", ""]
+        out += [f"- [{s['title']}](Scenes/{s['id']}/LICENSE): {s['also']}." for s in extra]
+        out.append("")
+    out += ["## Pictures of the scenes", "",
+            "Each scene's `preview.jpg`, and the sheet of them in `docs/library.jpg`, is a frame drawn by that scene "
+            "and is under that scene's licence. The frames of the non-commercial scenes are non-commercial too.", "",
+            "## In the app's own code", "",
+            "`Resources/Shaders.metal` uses one function, `hash32`, from \"Hash without Sine\" by David Hoskins "
+            "(https://www.shadertoy.com/view/4djSRW), under the MIT licence:", "",
+            "```", HOSKINS.rstrip(), "```", ""]
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -66,9 +83,12 @@ def noncommercial(all_scenes):
            "with credit, for non-commercial purposes only, and adaptations must carry the same licence. "
            "The versions here are adaptations (ports to Metal Shading Language) offered under those same licences.",
            "",
-           "This app is free and carries no advertising, which is why it may include them. If you reuse this "
-           "project in anything commercial, build with `scripts/build-app.sh --permissive-only`, which leaves "
-           "these folders out, or delete them.", ""]
+           "The licences forbid use that is primarily intended for commercial advantage or payment. This app is "
+           "free, carries no advertising and takes no payment, and on that footing it includes them. If that "
+           "ever changes, or if you reuse this project in anything commercial, build with "
+           "`scripts/build-app.sh --permissive-only`, which leaves these folders out, or delete them. "
+           "The same goes for pictures of these scenes: each `preview.jpg` here, and their tiles in "
+           "`docs/library.jpg`, are frames drawn by the scenes and carry the same licences.", ""]
     if nc:
         out += ["| Scene | Author | Licence | Source |", "|---|---|---|---|"]
         out += [row(s).replace("](Scenes/", "](") for s in nc]

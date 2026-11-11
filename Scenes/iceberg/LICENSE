@@ -54,3 +54,7 @@ related rights to this work.
 
     CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
     https://creativecommons.org/publicdomain/zero/1.0/
+
+One helper, sdBox(), is the standard signed distance to a box; the author's
+comment above it points to Inigo Quilez's page of distance functions
+(iquilezles.org, whose code snippets are under the MIT licence).

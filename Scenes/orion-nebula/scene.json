@@ -1,10 +1,11 @@
 {
   "title": "Orion Nebula",
-  "author": "gke0op (Argus)",
+  "author": "Ekmel Ozdemir (Argus)",
   "source": "https://github.com/gke0op/argus/blob/main/themes/Orion_Nebula.metal",
   "licence": "MIT",
   "style": "nature",
   "maxFPS": 10,
   "scale": 0.7,
-  "channels": ["orion-a.png", "orion-b.png"]
+  "channels": ["orion-a.png", "orion-b.png"],
+  "also": "measured data: VLT/MUSE maps, Weilbacher et al. 2015 (CC0 1.0); 3D dust map, Edenhofer et al. 2024 (CC BY 4.0); star positions from SIMBAD"
 }

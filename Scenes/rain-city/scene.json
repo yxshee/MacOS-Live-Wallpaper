@@ -6,5 +6,6 @@
   "style": "scifi",
   "maxFPS": 15,
   "scale": 1,
-  "channels": ["clouds.png"]
+  "channels": ["clouds.png"],
+  "also": "hash functions by David Hoskins (MIT)"
 }

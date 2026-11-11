@@ -71,6 +71,8 @@ static inline float2 scenePoint(VOut in, float aspect, float4 r) {
     return float2((in.uv.x - 0.5) * aspect, mix(r.x, r.y, in.uv.y));
 }
 
+// hash32 from "Hash without Sine", https://www.shadertoy.com/view/4djSRW
+// MIT License, Copyright (c)2014 David Hoskins. His notice is in THIRD_PARTY_NOTICES.md.
 static inline float3 hash32(float2 p) {
     float3 p3 = fract(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yxz + 33.33);

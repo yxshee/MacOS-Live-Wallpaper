@@ -12,7 +12,9 @@ line '// "Mountain Peak" by Alexander Alekseev aka TDM - 2014') reads:
     // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 
 The shader's own comment also credits Inigo Quilez ("thanks to iq") for the
-technique of its noise-with-analytical-derivatives function.
+technique of its noise-with-analytical-derivatives function. iquilezles.org says
+its code snippets are under the MIT licence; the function here is the author's
+own writing of that technique and is kept as he wrote it.
 
 What was changed for this port (also listed at the top of main.metal):
   - The libretro wrapper (version and compatibility defines, vertex stage,
@@ -26,7 +28,10 @@ What was changed for this port (also listed at the top of main.metal):
     GLSL would have zeroed are initialised.
   - "saturate" was renamed sat() (it is a Metal built-in); the unused PI and
     EPSILON constants were dropped.
-  Terrain, lighting, fog, wind and tone-mapping are the author's, unchanged.
+  Terrain, lighting, fog, wind and tone-mapping are unchanged from the copy this
+  port was made from, the one in libretro/glsl-shaders. That copy is an earlier
+  revision than the shader now on Shadertoy, which uses more steps and octaves
+  and a different tone map.
   scene.json draws it at a reduced resolution and frame rate to keep it cheap.
 
 This port is an adaptation of the original work and is offered under the same

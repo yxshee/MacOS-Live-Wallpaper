@@ -9,7 +9,7 @@ mrange"), as copied in
 https://raw.githubusercontent.com/y4my4my4m/kde-shader-wallpaper/HEAD/package/contents/ui/Shaders/Warped_LiquidMetal.frag
 (line 4), and the same words open the shader's description on Shadertoy
 (checked in the Shadertoy API record for shader 3t2czh, mirrored at
-https://github.com/GabeRundlett/shadertoy-api-shaders/blob/main/shaders/3t2czh.json,
+https://github.com/GabeRundlett/shadertoy-api-shaders/blob/master/shaders/3t2czh.json,
 author "mrange"; the Shadertoy web page itself could not be fetched by script).
 The two copies of the code are identical. The GPL-3.0 licence of the KDE
 wallpaper repository that bundles the file does not cover this shader; the

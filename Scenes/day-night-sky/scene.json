@@ -5,5 +5,6 @@
   "licence": "MIT",
   "style": "stylised",
   "maxFPS": 15,
-  "scale": 1
+  "scale": 1,
+  "also": "a hash function in the form of David Hoskins' (MIT)"
 }

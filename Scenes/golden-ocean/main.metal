@@ -324,6 +324,10 @@ float luminance(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
 
 // ---- shader-skills library: tonemap ----
 // AgX with the "punchy" look (more contrast and saturation) for stylized art.
+// The matrices, the polynomial fit and the look are those of the "AgX Minimal
+// Source" at https://iolite-engine.com/blog_posts/minimal_agx_implementation,
+// MIT License, Copyright (c) 2024 Missing Deadlines (Benjamin Wrensch); his
+// notice is in the LICENSE file. The display transform itself is Troy Sobotka's AgX.
 vec3 tonemapAgXPunchy(vec3 c) {
     const mat3 inset = mat3(0.842479062253094, 0.0423282422610123, 0.0423756549057051,
                             0.0784335999999992, 0.878468636469772, 0.0784336,

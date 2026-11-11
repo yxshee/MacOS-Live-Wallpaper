@@ -5,5 +5,6 @@
   "licence": "CC-BY-NC-SA-3.0",
   "style": "cosy",
   "maxFPS": 15,
-  "scale": 0.56
+  "scale": 0.56,
+  "also": "a hash function its author credits to Dave Hoskins"
 }

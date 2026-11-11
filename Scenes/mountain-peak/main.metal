@@ -19,7 +19,8 @@
 //  - "saturate" renamed sat() (it is a Metal built-in); the unused PI and
 //    EPSILON constants dropped.
 //  Everything else (constants, terrain, lighting, fog, wind, tone map) is the
-//  author's.
+//  author's, as in the libretro copy this was ported from (an earlier revision
+//  than the shader now on Shadertoy).
 
 #define WIND
 

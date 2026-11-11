@@ -48,3 +48,11 @@ Unported License.
 To view a copy of this licence, visit
 https://creativecommons.org/licenses/by-nc-sa/3.0/
 or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+Third-party code named in the author's comments, and what is known of its terms:
+  - smin / smax: Inigo Quilez. iquilezles.org says its code snippets are under the
+    MIT licence.
+  - pModPolar: hg_sdf by Mercury (https://mercury.sexy/hg_sdf/), which its page
+    says is dual-licensed "MIT OR CC-BY-NC-4.0" (since 2021-07-28).
+  - N31: see the note on Dave Hoskins' hash above.
+Each is a few lines and is kept exactly as the author wrote it.

@@ -40,6 +40,9 @@ main.metal. What was changed from the original:
   - The picture is flipped from the original's top-left origin to our bottom-left fragCoord, so
     it is the same way up.
   - The engine helpers (mp_hash, mp_noise, mp_fbm, mp_luma, mp_rotate) are copied in unchanged.
+    They come from the same repository, where they carry no separate attribution. mp_hash is a
+    three-line hash of a kind widely published in shader tutorials; its first author could not
+    be established.
   - The exposed parameters are constants at their default values (sun, horizon, speed, waves,
     scale and the "Golden" colours); the sun is no longer draggable.
   - Two smoothstep calls with their edges in descending order are written as one minus the

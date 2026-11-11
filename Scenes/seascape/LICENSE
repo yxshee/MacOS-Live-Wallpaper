@@ -30,7 +30,9 @@ Ported to Metal Shading Language for MacOS Live Wallpaper. What was changed:
   - The camera (its turn, sway and forward drift) runs at 0.3 of the original speed
     (LW_PACE), so the scene suits a desktop background. As written, the view swings
     through a full turn every 21 seconds. The waves' own motion, the lighting, the
-    colours and every constant of the sea are unchanged.
+    colours and every constant of the sea are unchanged from the copy this port
+    was made from (the KDE Shader Wallpaper and libretro copies agree; both are an
+    earlier revision than the shader now on Shadertoy, which uses more steps).
   - The author's optional 3x3 supersampling switch (#define AA) is turned off.
 No textures are used and none are shipped.
 

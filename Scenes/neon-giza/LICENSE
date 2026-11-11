@@ -22,8 +22,9 @@ The repository holds the same terms in its top-level LICENSE file, which is the
 text of CC0 1.0 Universal (GitHub detects it as CC0-1.0):
 https://github.com/mrange/synesthesia-public/blob/main/LICENSE
 
-This port is offered under the same terms, CC0-1.0. Keep reading for the small
-pieces inside the shader that are credited to other people.
+The author's own code in this port, and what the port adds, are offered under
+the same terms, CC0-1.0. The small pieces inside the shader that are credited to
+other people keep their own terms; keep reading.
 
 
 OTHER PEOPLE'S CODE INSIDE THE SHADER
@@ -44,8 +45,9 @@ built-in tanh() and hash by an integer hash written for the port. Both
 replacements are offered under CC0-1.0 like the rest.
 
 The MIT terms, for the pieces by Inigo Quilez (the copyright holder named is the
-one in the author's comments; the iquilezles.org pages did not load when this was
-checked, so the standard MIT text is given here rather than his own notice):
+one in the author's comments. iquilezles.org says its code snippets are under the
+MIT licence but gives no notice with each one, so the standard MIT text is given
+here with his name):
 
   Copyright (c) Inigo Quilez
 
@@ -87,8 +89,10 @@ WHAT WAS CHANGED
   and the sines all stay in step but the picture suits a desktop background.
 - Pass 1's blend with the previous frame (motion_blur) and with a user media
   layer are removed; neither exists in this app.
-- Pass 1's noise filter looked at four neighbouring pixels of pass 0. Each pixel
-  now looks at the two neighbours in its 2x2 pixel quad (quad_shuffle_xor).
+- Pass 1's noise filter looked at four neighbouring pixels of pass 0, which a
+  single pass cannot do. It is left out.
+- The two helpers the original marks "License: Unknown" (tanh_approx and hash)
+  are replaced, as described above.
 - The KODELIFE-only code and the unused toScreenSpace() were dropped.
 - Metal syntax only: thread references for out/inout parameters, `rd *= m`
   written out, any() around a vector comparison, initialised locals, PI and

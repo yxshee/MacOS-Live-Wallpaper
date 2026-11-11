@@ -5,5 +5,6 @@
   "licence": "CC-BY-NC-SA-3.0",
   "style": "nature",
   "maxFPS": 10,
-  "scale": 0.3
+  "scale": 0.3,
+  "also": "helpers its author credits to Dave Hoskins, Inigo Quilez and Mercury's hg_sdf"
 }

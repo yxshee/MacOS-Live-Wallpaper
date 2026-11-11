@@ -1,7 +1,10 @@
 Star Nest by Pablo Roman Andrioli (Kali)
 https://www.shadertoy.com/view/XlfGRj
 
-The author's notice in the shader reads: "This content is under the MIT License."
+The author's notice in the shader reads "This content is under the MIT License."
+in the copy this port was made from, and "License: MIT" in the Shadertoy API
+record of the same shader (mirrored at
+https://github.com/GabeRundlett/shadertoy-api-shaders). Both say the same thing.
 
 Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
 top of main.metal for what was changed.

@@ -34,6 +34,7 @@ The folder name is the scene's id: letters, digits, `-` and `_` only. `horizon`,
 | `style` | `nature`, `stylised`, `abstract`, `cosy` or `scifi`: the submenu it appears in. |
 | `maxFPS` | The most frames a second it is ever drawn at (1 to 60, default 20). The app lowers this itself on battery, when another app is in front, and in Low Power Mode: a scene set to 30 is drawn at 30 only while you are looking at the desktop on mains power, and at 15 behind another app. |
 | `scale` | Pixels drawn per point of screen (0.125 to 2, default 0.5). 0.5 means half the points each way, a sixteenth of a Retina display's pixels. Soft scenes look fine at 0.35 to 0.5; scenes with thin lines or small stars want 1. |
+| `also` | Optional. One line naming anyone else's work inside the scene and its terms, such as `hash functions by David Hoskins (MIT)`. It is printed in `THIRD_PARTY_NOTICES.md`; the notice itself goes in `LICENSE`. |
 | `channels` | Up to two image files in the folder, bound as `iChannel0` and `iChannel1`. Each may be at most 4096 pixels a side. A grey-scale image reads as grey in `.rgb`, as it would in GLSL. |
 
 ## The shader
@@ -130,7 +131,8 @@ At run time the app also watches each scene's real GPU time and lowers its resol
 
 ## Licences
 
-- Only bring in a scene if its author's licence lets it be redistributed, and quote that licence in `LICENSE` with a link to where it is stated. A licence on a host project's code does not cover the shaders it bundles; find the shader's own.
+- Only bring in a scene if its author's licence lets it be redistributed, and quote that licence in `LICENSE` with a link to where it is stated. A licence on a host project's code does not cover shaders that project merely collects from elsewhere; for those, find the shader's own. It does cover a shader its author wrote for that project.
 - Keep the author's header comment at the top of `main.metal`, and add a line saying what you changed.
-- On Shadertoy, a shader whose author states no licence falls under the site's default (CC BY-NC-SA 3.0). Do not rely on that default for a bundled scene; import only shaders whose own text states a licence.
+- On Shadertoy, a shader whose author states no licence is generally understood to fall under the site's default (CC BY-NC-SA 3.0). Do not rely on that default for a bundled scene; import only shaders whose own text states a licence.
+- If a shader contains a piece by someone else (a hash, a noise function, a tone map, data), keep or restore that person's notice in `LICENSE` and name it in the manifest's `also` field.
 - Non-commercial scenes are welcome. They are marked in the menu, listed in `Scenes/NONCOMMERCIAL.md`, and left out of `--permissive-only` builds.
