@@ -1,0 +1,75 @@
+Dusk Ocean by Adil Kairolla (MacPaper Engine)
+https://github.com/adilkairolla/macpaper-engine/tree/main/Samples/Dusk%20Ocean.macpaper
+
+The shaders in that folder (shaders/ocean.metal and shaders/film-grain.metal) and the
+engine helpers they call (Sources/MacPaper/Render/ShaderSource.swift) were written for the
+MacPaper Engine repository, https://github.com/adilkairolla/macpaper-engine . They carry no
+licence header of their own, so they fall under the repository's licence, which is stated in
+two places (repository state at commit 5e316a7edcf79e6472920718c732b8d8bcfa541f):
+
+  1. LICENSE at the repository root, lines 1 to 8 (the whole file is reproduced at the end
+     of this file):
+     https://github.com/adilkairolla/macpaper-engine/blob/5e316a7edcf79e6472920718c732b8d8bcfa541f/LICENSE
+
+       "MIT License
+
+       Copyright (c) 2026 Adil Kairolla
+
+       Permission is hereby granted, free of charge, to any person obtaining a copy
+       of this software and associated documentation files (the "Software"), to deal
+       in the Software without restriction, including without limitation the rights
+       to use, copy, modify, merge, publish, distribute, sublicense, and/or sell [...]"
+
+  2. README.md, section "License", lines 299 to 301:
+     https://github.com/adilkairolla/macpaper-engine/blob/5e316a7edcf79e6472920718c732b8d8bcfa541f/README.md
+
+       "## License
+
+       [MIT](LICENSE) © Adil Kairolla"
+
+The README also says, for the sample wallpapers: "Like everything here, they're MIT-licensed."
+(README.md, line 151), and "No third-party dependencies." (line 286). The repository contains
+no other licence or notice file.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the top of
+main.metal. What was changed from the original:
+
+  - ocean.metal and film-grain.metal were merged into one mainImage function. The MacPaper
+    entry point and its Pixel, Frame, Params and Inputs types are gone; frame.time is iTime and
+    the canvas aspect is the size of the surface being drawn.
+  - The picture is flipped from the original's top-left origin to our bottom-left fragCoord, so
+    it is the same way up.
+  - The engine helpers (mp_hash, mp_noise, mp_fbm, mp_luma, mp_rotate) are copied in unchanged.
+  - The exposed parameters are constants at their default values (sun, horizon, speed, waves,
+    scale and the "Golden" colours); the sun is no longer draggable.
+  - Two smoothstep calls with their edges in descending order are written as one minus the
+    ascending form (the same curve, but defined in Metal).
+  - The ocean colour is clamped to 0..1 before the grain, as the original's 8-bit intermediate
+    target did.
+  - The film grain is redrawn 4 times a second instead of 24, so it does not shimmer on a
+    desktop. Its strength and cell size are unchanged.
+  - Nothing else: the waves, sun, clouds, colours and their speeds are the author's.
+
+----------------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Adil Kairolla
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

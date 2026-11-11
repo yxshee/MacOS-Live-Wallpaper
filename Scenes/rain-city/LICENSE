@@ -1,0 +1,92 @@
+Rain City by Ilia Reingold (ShaderDesk)
+https://github.com/ilrein/shaderdesk/blob/main/Scenes/RainCity.metal
+(file last changed in commit 94c77888, "Rain City: rainy cyberpunk skyline with neon signs,
+searchlights and flying cars", 2026-09-29)
+
+The shader file itself carries no licence notice. It was written for the ShaderDesk
+repository, whose licence covers it:
+
+  https://github.com/ilrein/shaderdesk/blob/main/LICENSE reads:
+    "MIT License
+
+     Copyright (c) 2026 Ilia Reingold
+
+     Permission is hereby granted, free of charge, to any person obtaining a copy
+     of this software and associated documentation files (the "Software"), to deal
+     in the Software without restriction, ..."   (full text below)
+
+  https://github.com/ilrein/shaderdesk/blob/main/README.md, section "License", reads:
+    "MIT, see [LICENSE](LICENSE)."
+
+  https://github.com/ilrein/shaderdesk/blob/main/CONTRIBUTING.md reads:
+    "By contributing, you agree that your work is released under the [MIT License](LICENSE)."
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the top of
+main.metal for what was changed:
+
+  - ShaderDesk's wrapper (scene_frame / scene_bake entry points, Uniforms, the shared bloom
+    pass, present()) is removed; the picture is written by mainImage() with the original's
+    own tone map and the sRGB curve from ShaderDesk's Scenes/Common.metal.
+  - The baked cloud noise is replaced by clouds.png, an image generated for this port with a
+    C copy of ShaderDesk's own tiling fBm (pgnoise / pfbm from Scenes/Common.metal, a 24 x 16
+    cell tile; red = 6 octaves, green = 5 octaves, blue unused). It contains no third-party
+    image data.
+  - The scene clock is iTime; pow(x, 2.0) is written x * x.
+  - The faulty neon signs flicker at 3 Hz instead of 12 Hz, to suit a desktop background.
+  - The bloom pass is not reproduced.
+  - hash11 / hash12 are copied from ShaderDesk's Scenes/Common.metal. They are David Hoskins'
+    "Hash without Sine" (https://www.shadertoy.com/view/4djSRW), which carries the MIT notice
+    reproduced in the second section below. ShaderDesk's copy does not credit him; the notice
+    is restored here and in main.metal.
+
+--------------------------------------------------------------------------------
+1. Rain City, ShaderDesk
+--------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Ilia Reingold
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+2. Hash without Sine (hash11, hash12), David Hoskins
+--------------------------------------------------------------------------------
+
+Hash without Sine, https://www.shadertoy.com/view/4djSRW
+MIT License...
+Copyright (c)2014 David Hoskins.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

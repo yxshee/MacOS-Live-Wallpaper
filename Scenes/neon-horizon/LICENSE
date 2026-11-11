@@ -1,0 +1,81 @@
+Neon Horizon by Ilia Reingold (ShaderDesk)
+https://github.com/ilrein/shaderdesk/blob/main/Scenes/NeonHorizon.metal
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed.
+
+Where the licence is stated
+---------------------------
+Scenes/NeonHorizon.metal carries no licence notice of its own. It was written
+for the ShaderDesk repository, whose LICENSE file covers all of it:
+https://github.com/ilrein/shaderdesk/blob/main/LICENSE
+(GitHub reports the repository's licence as MIT; the repository is not a fork.)
+The README of that repository says, under "License":
+
+    MIT, see [LICENSE](LICENSE).
+
+The LICENSE file begins:
+
+    MIT License
+
+    Copyright (c) 2026 Ilia Reingold
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, ...
+
+and its full text is reproduced below.
+
+What was changed
+----------------
+- The ShaderDesk engine wrapper was removed. scene_bake and scene_frame became one
+  mainImage(); the uniforms became iResolution and iTime. The picture is laid out
+  in display heights from fragCoord, as in the original.
+- noise.png (iChannel0) replaces the original's baked texture. It holds the same
+  seamlessly tiling fBm as the red, green and blue channels of scene_bake (24 x 16
+  cells, 768 x 512 pixels, 8 bits), made once by running the same hash and noise
+  maths from Scenes/Common.metal. It is a generated image, not taken from anywhere.
+- The starfield that the original bakes into the texture's alpha channel is
+  computed per pixel with the same star layers, as if on a display 1000 points high.
+- The scene clock is iTime wrapped at 1200 s; every period in the scene divides it,
+  so the wrap cannot be seen.
+- ShaderDesk's shared bloom pass and dithering are not available. The tone map and
+  the sRGB encoding that ShaderDesk applies at the end are done in mainImage().
+- The helper functions hash11, hash12, hash22, noise1 and starLayer were copied from
+  Scenes/Common.metal of the same repository (starLayer keeps only the intensity,
+  which is all this scene used). The per-display seed and the brightness setting
+  are fixed at 0 and 1.
+- Colours, shapes, step counts and speeds are unchanged.
+
+Third-party notice
+------------------
+The hash functions hash11, hash12 and hash22 in ShaderDesk's Scenes/Common.metal
+(and so in main.metal) are the well-known "Hash without Sine" functions by
+David Hoskins, published under the MIT License:
+
+    Copyright (c)2014 David Hoskins.
+
+His permission notice is the same MIT text reproduced below. ShaderDesk's file does
+not carry his name; it is given here.
+
+MIT License
+
+Copyright (c) 2026 Ilia Reingold
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,0 +1,60 @@
+Northern Lights by Adil Kairolla (MacPaper Engine)
+https://github.com/adilkairolla/macpaper-engine/tree/main/Samples/Northern%20Lights.macpaper
+
+This is the "Northern Lights" sample wallpaper of the MacPaper Engine project
+(https://github.com/adilkairolla/macpaper-engine), ported to Metal Shading Language
+for MacOS Live Wallpaper. The sample is procedural: it ships no images, and its
+shaders were added to the repository by its author in the project's first commit.
+
+Licence statement relied on. The repository's LICENSE file
+(https://github.com/adilkairolla/macpaper-engine/blob/main/LICENSE, as of commit
+5e316a7edcf79e6472920718c732b8d8bcfa541f) reads, in its opening lines:
+
+    MIT License
+
+    Copyright (c) 2026 Adil Kairolla
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, ...
+
+and the project's README.md, in its "License" section, says: "[MIT](LICENSE) © Adil
+Kairolla". The shader files of the sample carry no notice of their own, so this
+repository-wide MIT licence is the statement that covers them.
+
+Note on provenance. The helper functions mp_hash, mp_noise and mp_fbm in main.metal
+are copied from the same repository (Sources/MacPaper/Render/ShaderSource.swift),
+where they carry no separate attribution. mp_hash is a three-line hash of a kind
+that is widely published in shader tutorials and code; no other author's shader is
+credited or reproduced in the sample.
+
+What was changed (the full list is at the top of main.metal): the five layers
+(sky, stars, aurora, mountains, fog) are drawn in one pass; the "stars" particle
+emitter is drawn per pixel from a jittered grid with the same size, lifetime, fade
+and twinkle settings, the twinkle at half speed; the sample's default parameter
+values are constants; the camera sway ("drift") is kept and computed from time; the
+canvas fills the screen's height and continues sideways on wide screens; the ridge
+edges are anti-aliased over one pixel; and the code is written as a mainImage
+function for this app. The picture is otherwise the sample's.
+
+MIT License
+
+Copyright (c) 2026 Adil Kairolla
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

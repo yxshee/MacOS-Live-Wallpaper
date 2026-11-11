@@ -1,0 +1,117 @@
+Orion Nebula
+from Argus by gke0op (Ekmel Ozdemir)
+
+Credit
+  Argus, https://github.com/gke0op/argus (owner gke0op, copyright holder Ekmel Ozdemir).
+  The shader's own header names Claude Opus (Anthropic) as its author, dated 2026-10-16. The
+  repository's NOTICE.md says themes/Orion_Nebula.metal and its data file were written by Claude
+  Opus, that Ekmel Ozdemir directed the project and holds the copyright, and that the baking tool is
+  tools/orion_bake/bake.py.
+
+Source
+  https://github.com/gke0op/argus/blob/main/themes/Orion_Nebula.metal
+  data: https://github.com/gke0op/argus/blob/main/themes/Orion_Nebula.bin
+  as of repository commit 7c26f05059fd3ff8a8a80994060dc1cacaabde03 (2026-11-06); the shader's last
+  change is commit 854dcf07bd0d85b57e68ec1672515ad58068f0e2 (2026-10-16).
+  sha256 of the files ported: Orion_Nebula.metal c6acc764fafc0655597259513527e23bd0ff0820369cc4a4fb53f591f907c5ca
+                              Orion_Nebula.bin   a516c85b840d1e1f7d7efc64f072eb7aeac7d90231878594708aa604b9b810e1
+
+Licence of the shader and of the data file
+  The shader file has no licence text of its own, so the licence is the one of the repository it was
+  written for. Statements, quoted exactly:
+
+  LICENSE (https://github.com/gke0op/argus/blob/main/LICENSE, lines 1-3):
+    "MIT License
+
+    Copyright (c) 2026 Ekmel Ozdemir"
+  followed by the standard MIT permission notice, reproduced in full below.
+
+  NOTICE.md (https://github.com/gke0op/argus/blob/main/NOTICE.md, line 3):
+    "Argus is released under the MIT License (see `LICENSE`)."
+
+  README.md, section "Licence" (https://github.com/gke0op/argus#licence):
+    "MIT, see [LICENSE](LICENSE). Data files carry their own licences (the Orion Nebula data is
+    CC0 and CC BY 4.0); see [NOTICE.md](NOTICE.md)."
+
+  The shader's code credits no other author's shader and contains no third-party source code
+  (NOTICE.md, "Third-party data": "The repository contains no third-party source code."). The
+  published literature it cites is for physical constants and methods, cited in its header.
+
+Measured data carried in orion-a.png and orion-b.png, and its own licences
+  The two PNG files are the two halves (rows 0-491 and rows 492-983) of themes/Orion_Nebula.bin,
+  byte for byte. They hold data, not pictures; the alpha channel is data too. The file is the
+  author's down-sampled, 8-bit log-encoded extract of the sources below (NOTICE.md, "Third-party
+  data"). Each source keeps its own licence:
+
+  1. VLT/MUSE maps of the Orion Nebula: Weilbacher, P. M. et al. 2015, A&A 582, A114, "A MUSE map
+     of the central Orion Nebula (M 42)"; data published by the Leibniz-Institut fuer Astrophysik
+     Potsdam (AIP), doi:10.17876/data/2023_3, under Creative Commons CC0 1.0 ("Creative Commons CC0
+     for data"). Based on observations made with ESO telescopes at the La Silla Paranal Observatory
+     under programme ID 60.A-9100(A). The author down-sampled the reddening-corrected line maps (Hbeta
+     to Halpha, [O III], [N II], [S II], [O I]) and the extinction map, masked bright stars, and
+     encoded them as 8-bit logarithms.
+     Licence: CC0 1.0. "To the extent possible under law, the author has waived all copyright and
+     related rights to this work." https://creativecommons.org/publicdomain/zero/1.0/
+     No credit is required; it is given here anyway.
+
+  2. 3D dust map: Edenhofer, G. et al. 2024, A&A 685, A82, "A parsec-scale Galactic 3D dust map out
+     to 1.25 kpc from the Sun"; data doi:10.5281/zenodo.8187943, licensed under CC BY 4.0
+     (https://creativecommons.org/licenses/by/4.0/). Required credit: the attribution above, the
+     licence link, and an indication of changes. Changes made by the author of Argus: "we read the
+     posterior mean and standard deviation along the 64 HEALPix sightlines around M42 and kept only
+     the integrated extinction in front of the Orion complex (one number, `C_FG`), which is subtracted
+     from the MUSE extinction map before encoding." That number is the constant C_FG in main.metal
+     (0.0393, c(Hbeta) of the diffuse medium in front), and its subtraction is in the Veil channel of
+     the data.
+
+  3. Star positions and magnitudes of 12 bright stars: the SIMBAD database, operated at CDS,
+     Strasbourg, France (Wenger et al. 2000, A&AS 143, 9). The positions are baked into main.metal.
+
+  The remaining numbers in main.metal (line ratios, recombination coefficients, extinction law,
+  stellar temperatures, cluster structure) are published physical constants and parameters, cited in
+  the header of main.metal where they are used.
+
+What was changed for this wallpaper
+  The shader was ported from Argus's compute-kernel form (argus_init and argus_draw) to one fragment
+  function: the state it baked is rebuilt from the two images where it is needed, the per-tile star
+  culling became a screen grid, and the constant tables were declared the way the scene wrapper needs.
+  The physics, constants, colours, camera and display stretch are the author's. The full list is at
+  the top of main.metal. The two PNG files are the author's data file split in two, with no byte
+  changed. scene.json sets 0.7 draw scale and 10 frames a second.
+
+The licence of this port (shader, data file and credits as above) is the MIT License below; the data
+sources in 1 and 2 keep the licences stated above (CC0 1.0, and CC BY 4.0 with the credit above).
+
+----------------------------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Ekmel Ozdemir
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+----------------------------------------------------------------------------------------------------
+
+Creative Commons CC0 1.0 Universal (the MUSE maps)
+  To the extent possible under law, the author has waived all copyright and related rights to this
+  work. https://creativecommons.org/publicdomain/zero/1.0/
+
+Creative Commons Attribution 4.0 International, CC BY 4.0 (the dust map)
+  Licensed under the Creative Commons Attribution 4.0 International License.
+  https://creativecommons.org/licenses/by/4.0/

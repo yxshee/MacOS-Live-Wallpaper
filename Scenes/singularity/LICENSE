@@ -1,0 +1,62 @@
+"Singularity" by XorDev (Xor)
+Source: https://github.com/XorDev/Singularity
+Original shader page: https://www.shadertoy.com/view/3csSWB
+
+The shader's header credits three people for golf byte-savings on the
+author's code: FabriceNeyret2 (-19), dean_the_coder (-12) and iq (-4).
+
+LICENCE STATEMENT RELIED ON
+
+The repository the shader is published in carries an MIT licence, in its
+LICENSE file (https://github.com/XorDev/Singularity/blob/main/LICENSE), which
+begins:
+
+    MIT License
+
+    Copyright (c) 2025 Xor
+
+and its README (https://github.com/XorDev/Singularity/blob/main/README.md,
+line 2) states:
+
+    "The minified Singularity shader hosted under MIT license"
+
+The sibling file Shaders/twigl-version.glsl in the same repository
+(https://github.com/XorDev/Singularity/blob/main/Shaders/twigl-version.glsl,
+line 3) is headed "//MIT License". The file this port is made from,
+Shaders/shadertoy-version.glsl, has no licence line of its own; it is covered
+by the repository's LICENSE and README above. The Shadertoy page itself could
+not be read by an automated client (it answers with a bot challenge), so it was
+not consulted.
+
+WHAT WAS CHANGED
+
+Ported to Metal Shading Language for MacOS Live Wallpaper. The golfed
+declarations were written out as separate statements in the same order
+(including the implicit mat2 constructions, the assignment inside the cos()
+argument, the zero-initialised accumulator and the post-increment loop test),
+the output parameter was declared the way Metal needs it, and time runs at half
+the original speed to suit a desktop background (TIME_SCALE in main.metal; set
+it to 1.0 for the original pace). The maths, constants and colouring are
+untouched. See the note at the top of main.metal.
+
+MIT License
+
+Copyright (c) 2025 Xor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

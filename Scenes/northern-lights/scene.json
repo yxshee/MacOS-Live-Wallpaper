@@ -1,0 +1,9 @@
+{
+  "title": "Northern Lights",
+  "author": "Adil Kairolla (MacPaper Engine)",
+  "source": "https://github.com/adilkairolla/macpaper-engine/tree/main/Samples/Northern%20Lights.macpaper",
+  "licence": "MIT",
+  "style": "nature",
+  "maxFPS": 15,
+  "scale": 0.75
+}

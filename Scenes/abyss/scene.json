@@ -1,0 +1,9 @@
+{
+  "title": "Abyss",
+  "author": "Ilia Reingold (ShaderDesk)",
+  "source": "https://github.com/ilrein/shaderdesk/blob/main/Scenes/Abyss.metal",
+  "licence": "MIT",
+  "style": "nature",
+  "maxFPS": 15,
+  "scale": 0.75
+}

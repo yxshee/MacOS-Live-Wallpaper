@@ -1,0 +1,58 @@
+Auroras by nimitz (@stormoid), 2017
+https://www.shadertoy.com/view/XtGGRt
+
+The shader's own header comment states its licence. Verbatim, the first three
+lines of the file read:
+
+    // Auroras by nimitz 2017 (twitter: @stormoid)
+    // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
+    // Contact the author for other licensing options
+
+This was read in the copy of the shader at
+https://raw.githubusercontent.com/y4my4my4m/kde-shader-wallpaper/HEAD/package/contents/ui/Shaders/Auroras.frag
+(lines 1 to 3 of package/contents/ui/Shaders/Auroras.frag). That repository's
+own GPL-3.0 licence applies to its own code and does not cover this shader,
+whose header sets its own terms. The Shadertoy page itself could not be read
+automatically (it sits behind a bot check), so the statement above is quoted
+from the shader file, not from the page.
+
+Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0
+Unported License.
+https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+This port (main.metal) is an adaptation of the original shader and is offered
+under the same licence, Creative Commons Attribution-NonCommercial-ShareAlike
+3.0 Unported. It may not be used commercially. Anyone who shares it, or a work
+built on it, must credit nimitz (@stormoid), link the licence, say that changes
+were made, and share their version under the same licence. The author invites
+contact for other licensing options; this port does not carry any such option.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper. What was changed
+(the same list is at the top of main.metal):
+
+  - mainImage's output parameter is declared as thread vec4& instead of out vec4.
+  - Matrix products on vectors (v *= mat2) are written as v = v * mat2, and
+    p*= -m2 as p = -(p * m2) (Metal has no unary minus on a matrix; same value).
+  - gl_FragCoord.xy, used to dither the sample positions, is passed to aurora()
+    as fragCoord (same value: pixel position, origin bottom left).
+  - The pointer is replaced by the constant the original uses when there is no
+    pointer, mo = (-0.1, 0.1); the slow camera sway is unchanged.
+  - #define time iTime is replaced by iTime written out.
+  - smoothstep on a vec4 uses vec4 edges, as Metal requires.
+
+The maths, constants, step counts and animation speed are untouched. No images
+are used. scene.json sets the render scale to 0.3 and the frame rate cap to
+15 so the scene stays within the app's cost budget.
+
+Attribution-NonCommercial-ShareAlike 3.0 Unported, summary of the licence (the
+full legal text is at https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode):
+
+  You are free to share (copy and redistribute the material in any medium or
+  format) and to adapt (remix, transform, and build upon the material), under
+  these terms:
+
+  Attribution: you must give appropriate credit, provide a link to the licence,
+  and indicate if changes were made.
+  NonCommercial: you may not use the material for commercial purposes.
+  ShareAlike: if you remix, transform, or build upon the material, you must
+  distribute your contributions under the same licence as the original.

@@ -1,0 +1,39 @@
+Mountain Peak by Alexander Alekseev aka TDM (2014)
+https://www.shadertoy.com/view/llK3WR
+
+Source of this port: the libretro GLSL conversion of the shader,
+https://raw.githubusercontent.com/libretro/glsl-shaders/master/procedural/tdm-mountain-peak.glsl
+(libretro/glsl-shaders has no licence file of its own; the licence is stated in
+the shader's own header, as below.)
+
+The author's notice in the shader (line 113 of that file, directly under the
+line '// "Mountain Peak" by Alexander Alekseev aka TDM - 2014') reads:
+
+    // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
+The shader's own comment also credits Inigo Quilez ("thanks to iq") for the
+technique of its noise-with-analytical-derivatives function.
+
+What was changed for this port (also listed at the top of main.metal):
+  - The libretro wrapper (version and compatibility defines, vertex stage,
+    RETRO_PIXEL_SIZE parameter line, uniforms, main()) was removed.
+  - Time: libretro's frame-counter "iGlobalTime" was replaced by iTime seconds
+    multiplied by TIME_SCALE (0.3), so the camera drifts slowly round the peak
+    (0.03 rad per second) as befits a desktop background.
+  - Mouse input was replaced by a constant (the original's no-mouse branch).
+  - floatBitsToUint / uintBitsToFloat became as_type<uint> / as_type<float>.
+  - Output parameters of hftracing() became thread references; locals that
+    GLSL would have zeroed are initialised.
+  - "saturate" was renamed sat() (it is a Metal built-in); the unused PI and
+    EPSILON constants were dropped.
+  Terrain, lighting, fog, wind and tone-mapping are the author's, unchanged.
+  scene.json draws it at a reduced resolution and frame rate to keep it cheap.
+
+This port is an adaptation of the original work and is offered under the same
+licence (ShareAlike). It may not be used commercially.
+
+Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0
+Unported License.
+To view a copy of this license, visit
+https://creativecommons.org/licenses/by-nc-sa/3.0/
+or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.

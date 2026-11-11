@@ -1,0 +1,10 @@
+{
+  "title": "Rain City",
+  "author": "Ilia Reingold (ShaderDesk)",
+  "source": "https://github.com/ilrein/shaderdesk/blob/main/Scenes/RainCity.metal",
+  "licence": "MIT",
+  "style": "scifi",
+  "maxFPS": 15,
+  "scale": 1,
+  "channels": ["clouds.png"]
+}

@@ -1,0 +1,82 @@
+Caustics by Andre Hall (Noctura)
+https://github.com/DRAZY/noctura-screensaver/blob/main/src/scenes/Caustics.ts
+
+The shader is the fragment shader embedded in src/scenes/Caustics.ts of the
+Noctura screensaver (https://github.com/DRAZY/noctura-screensaver), read at
+commit 721406870ecd7db07b23c1460fed4dec753dcdd1. That file carries no licence
+header of its own; it is covered by the LICENSE of the repository it was written
+for, and by the README. The statements, quoted exactly:
+
+  LICENSE of the repository (https://github.com/DRAZY/noctura-screensaver/blob/main/LICENSE,
+  lines 1 to 3 and the grant at line 5):
+
+    "MIT License
+
+     Copyright (c) 2026 Andre Hall
+
+     Permission is hereby granted, free of charge, to any person obtaining a copy
+     of this software and associated documentation files (the "Software"), to deal
+     in the Software without restriction, including without limitation the rights
+     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     copies of the Software, ..."
+
+  README.md of the repository, section "License", line 150:
+
+    "MIT — see [LICENSE](LICENSE). Created by Andre Hall."
+
+Third-party code inside the shader: the 2D simplex noise function snoise() is
+the textureless simplex noise by Ian McEwan, Ashima Arts, and Stefan Gustavson
+(https://github.com/ashima/webgl-noise), which the Noctura project credits in
+src/engine/shaders/noise.glsl.ts as "Ashima Arts / Stefan Gustavson simplex
+noise (MIT)". It is under the same MIT licence, and its copyright notice is
+kept below as that licence requires. Its LICENSE reads, in part:
+
+    "Copyright (C) 2011 by Ashima Arts (Simplex noise)
+     Copyright (C) 2011-2016 by Stefan Gustavson (Classic noise and others)
+
+     Permission is hereby granted, free of charge, to any person obtaining a copy
+     of this software and associated documentation files (the "Software"), to deal
+     in the Software without restriction, ..."
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed. In short:
+
+  - The three.js / TypeScript wrapper is removed. The uniforms uSpeed, uScale and
+    uSize are constants at the scene's own defaults (0.4, 5.0, 1.0), and the
+    colours are the default "Ocean" palette (#030e2e, #0c5ca3, #6bd2e0), written
+    as the linear-light values three.js passes to the shader, which reproduces
+    the look of the author's own screenshot.
+  - main() became mainImage(); vUv is derived from fragCoord and iResolution;
+    gl_FragColor and gl_FragCoord became fragColor and fragCoord.
+  - The `precision` line is dropped and `x12.xy -= i1` is written as an
+    assignment.
+  - worley() keeps the author's 3x3 cell search and additionally searches the
+    ring of cells beyond it where the second-nearest distance is above 1.0. That
+    removes rare hard seams the 3x3 search alone leaves (0.04% of the pixels of a
+    2056x1329 frame); every other pixel is identical to the author's result.
+  - No images are used. Nothing else was changed: the maths, constants, step
+    counts and speed are the author's.
+
+MIT License
+
+Copyright (c) 2026 Andre Hall
+Copyright (C) 2011 by Ashima Arts (Simplex noise)
+Copyright (C) 2011-2016 by Stefan Gustavson (Classic noise and others)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

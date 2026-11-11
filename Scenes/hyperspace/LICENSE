@@ -1,0 +1,51 @@
+Hyperspace by Mårten Rånge (mrange)
+https://github.com/mrange/synesthesia-public/tree/main/hyperspace.synScene
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed.
+
+Where the licence is stated
+
+The repository this scene was written for, mrange/synesthesia-public, has a
+LICENSE file in its root:
+https://github.com/mrange/synesthesia-public/blob/main/LICENSE
+It was added in the repository's first commit (2025-09-13), before this scene
+(2026-03-01). It begins, verbatim:
+
+    Creative Commons Legal Code
+
+    CC0 1.0 Universal
+
+and its section 2 reads, in part: "Affirmer hereby overtly, fully, permanently,
+irrevocably and unconditionally waives, abandons, and surrenders all of
+Affirmer's Copyright and Related Rights and associated claims and causes of
+action". GitHub identifies the file as CC0-1.0.
+
+The scene's own main.glsl has no header comment. Other scenes in the same
+repository carry the author's own header, for example
+hyperlines.synScene/main.glsl: "This file is released under CC0 1.0 Universal
+(Public Domain Dedication). To the extent possible under law, Mårten Rånge has
+waived all copyright and related or neighboring rights to this work."
+
+The code of this scene contains no third-party snippets and credits no other
+author (its scene.json credit reads "mrange"). Other scenes in the repository
+that do include third-party functions mark them with their own licence lines;
+this one has none.
+
+What was changed
+
+- The Synesthesia wrapper and controls removed; controls fixed at their
+  defaults; the audio input replaced by 0; the media layer dropped.
+- The trail feedback buffer folded into a single pass by re-evaluating the
+  last six frames of the original's 60 fps sequence for each pixel.
+- The animation slowed to a quarter of the original's speed.
+- GLSL translated to Metal Shading Language.
+The full list is at the top of main.metal.
+
+Licence
+
+To the extent possible under law, the author has waived all copyright and
+related rights to this work.
+
+CC0 1.0 Universal (Public Domain Dedication)
+https://creativecommons.org/publicdomain/zero/1.0/

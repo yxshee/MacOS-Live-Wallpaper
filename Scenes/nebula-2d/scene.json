@@ -1,0 +1,9 @@
+{
+  "title": "2D Nebula",
+  "author": "flytrap",
+  "source": "https://godotshaders.com/shader/2d-nebula-shader/",
+  "licence": "CC0-1.0",
+  "style": "nature",
+  "maxFPS": 15,
+  "scale": 0.5
+}

@@ -1,0 +1,57 @@
+2d Nebula Shader by flytrap
+https://godotshaders.com/shader/2d-nebula-shader/
+Author page: https://godotshaders.com/author/flytrap/
+
+The star drawing in this shader is credited by its author to the "Stars shader"
+by gerardogc2378, https://godotshaders.com/shader/stars-shader/ , which is also
+published under CC0 (see below).
+
+LICENCE STATEMENT RELIED ON
+
+Where it appears: the licence notice printed under the shader code on the
+shader's own page, https://godotshaders.com/shader/2d-nebula-shader/ (the page
+also carries the licence tag "CC0"). Verbatim:
+
+  "The shader code and all code snippets in this post are under CC0 license and
+  can be used freely without the author's permission. Images and videos, and
+  assets depicted in those, do not fall under this license. For more info, see
+  our License terms."
+
+The site's terms, https://godotshaders.com/license/ , say that when a shader is
+submitted "the shader code and other code snippets in the post will be under the
+license that you choose", and that the submitter agrees "the code you submit is
+your own or already considered free to share". The same notice, word for word,
+appears on the credited Stars shader page, https://godotshaders.com/shader/stars-shader/ .
+
+The notice covers the shader code only. The page's featured image, screenshots
+and live preview are not covered, and none of them is part of this scene.
+
+CHANGES FROM THE ORIGINAL
+
+Ported to Metal Shading Language for MacOS Live Wallpaper. The author's
+algorithm, constants and colours are unchanged. Changes:
+
+  - The Godot wrapper (shader_type, uniform, fragment(), UV, TIME, COLOR) is
+    removed, and the exposed uniforms are fixed at their default values.
+  - UV is rebuilt from the pixel position: origin at the top left as in Godot,
+    the shorter side of the screen spans 0..1, so the picture is not stretched.
+  - Slowed for a desktop background. The original scrolls the clouds by
+    0.03*T*sin(0.07*T) with T = 5*TIME, so the offset and the speed grow without
+    limit. Here T = 0.25*TIME and the growing factor T is replaced by a constant
+    (100, what the original has after 20 seconds), so the clouds drift on a slow
+    bounded loop. The cloud "tide" and the star twinkle run at a quarter of the
+    original rate.
+  - The final colour is clamped to 0..1, as Godot's 8-bit framebuffer does.
+  - The star spikes divide by the distance to the star's centre lines; that
+    distance is kept at 0.0001 or more so no pixel divides by zero.
+  - The unused fbm() function and the unused texture lookup are dropped.
+  - Renamed constants (size, prob, zoomScale, starscale) to avoid clashes.
+
+LICENCE TEXT
+
+CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+
+To the extent possible under law, the author has waived all copyright and
+related rights to this work.
+
+https://creativecommons.org/publicdomain/zero/1.0/

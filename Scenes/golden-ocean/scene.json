@@ -1,0 +1,9 @@
+{
+  "title": "Golden-hour Ocean",
+  "author": "gokayfem",
+  "source": "https://github.com/gokayfem/shader-skills/blob/main/gallery/ocean.glsl",
+  "licence": "MIT",
+  "style": "nature",
+  "maxFPS": 10,
+  "scale": 0.4
+}

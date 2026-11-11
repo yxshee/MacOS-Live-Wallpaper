@@ -1,0 +1,41 @@
+Luminescence by Martijn Steinrucken (BigWings), 2017
+https://github.com/libretro/glsl-shaders/blob/master/procedural/bigwings-luminescence.glsl
+(raw file: https://raw.githubusercontent.com/libretro/glsl-shaders/master/procedural/bigwings-luminescence.glsl)
+
+The author's notice in the shader's own header (line 108 of the file above)
+reads, verbatim:
+
+    License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
+Credit: the shader and its look are the work of Martijn Steinrucken (BigWings).
+The shader's header also credits Klaus Lunde for the music that accompanied the
+original entry; no music is used here. Inside the code, three small helper
+functions are credited by the author to other people: a hash function (Dave
+Hoskins), smooth min / max (Inigo Quilez) and pModPolar (hg_sdf, mercury.sexy).
+The author's header applies the licence above to the file as a whole.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper. This port is an
+adaptation of the original shader and is offered under the same licence,
+Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported. It may not
+be used commercially.
+
+What was changed (the note at the top of main.metal lists it too):
+  - the libretro wrapper (vertex stage, uniforms, one unused parameter and
+    main()) was removed;
+  - the clock runs at half speed (LW_TIME_SCALE = 0.5) so the scene is calmer
+    as a desktop background;
+  - the camera follows the author's own automatic path; there is no mouse input;
+  - GLSL constructs were rewritten for Metal (a struct member renamed, an inout
+    parameter passed by value, step() and mat3 written out, smoothstep written
+    out as its formula because it is called with reversed edges);
+  - uninitialised values were initialised, and two clamps (acos argument, final
+    colour before pow) were added so no NaN can appear in tall or wide views;
+  - unused code (the SINGLE and MOUSE branches and five unused helper
+    functions) was dropped.
+The marching, the shapes, the constants and the shading are the author's.
+
+Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0
+Unported License.
+To view a copy of this licence, visit
+https://creativecommons.org/licenses/by-nc-sa/3.0/
+or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.

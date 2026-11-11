@@ -1,0 +1,54 @@
+Iceberg by Otavio Good
+https://github.com/libretro/glsl-shaders/blob/master/procedural/otaviogood-iceberg.glsl
+(the original shader in its libretro / RetroArch form, commit 7e77d928 of
+libretro/glsl-shaders; the raw file is
+https://raw.githubusercontent.com/libretro/glsl-shaders/master/procedural/otaviogood-iceberg.glsl)
+
+The licence statement that covers this shader is in the shader file's own
+header comment (lines 105 to 111 of that file), signed by the author. It reads:
+
+    License CC0 - http://creativecommons.org/publicdomain/zero/1.0/
+    To the extent possible under law, the author(s) have dedicated all
+    copyright and related and neighboring rights to this software to the public
+    domain worldwide. This software is distributed without any warranty.
+    ^ This means do ANYTHING YOU WANT with this code. Because we are
+    programmers, not lawyers.
+    -Otavio Good
+
+(The line breaks above are only wrapped for this page; the quoted text is
+unchanged. The same header is kept at the top of main.metal.) The libretro
+glsl-shaders repository has no repository-wide LICENSE file, so this per-file
+statement is the one that applies.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed. In short:
+
+  - The libretro wrapper (vertex shader, uniforms, parameter pragma, main()) is
+    removed; time comes from iTime and the size from iResolution.
+  - Animation runs at half the libretro speed (the libretro wrapper ran it at
+    1.5 times Shadertoy speed; here it is 0.5 times), so the camera drifts
+    calmly on a desktop.
+  - The "fade" value the author computes for each of the three camera shots,
+    whose use was commented out at the end of RayTrace, is switched on, so the
+    shots dissolve through black instead of cutting.
+  - Out parameters are written thread T&; the locals named cos and sin in
+    RotateX/Y/Z are renamed; variables are initialised.
+  - The author's disabled options (non-realtime HQ renderer, manual camera,
+    HQ noise) are removed.
+  - Speed-ups that leave the picture unchanged, added to fit the wallpaper's
+    GPU budget: a cheap bound that skips the iceberg's distance where it
+    cannot matter, larger march steps for rays that cannot hit the water,
+    ambient-occlusion and scattering work done only for the material that uses
+    it, and one shared call for the camera ray and the reflection ray. Against
+    the plain port, fewer than 0.02% of pixels differ by more than 2/255.
+  - No images or other assets are used or shipped.
+
+Apart from the items listed above (slower time, the fade between shots, the
+removed options), the shader's maths, constants, camera path and colours are
+the author's.
+
+To the extent possible under law, the author has waived all copyright and
+related rights to this work.
+
+    CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+    https://creativecommons.org/publicdomain/zero/1.0/

@@ -1,0 +1,9 @@
+{
+  "title": "Luminescence",
+  "author": "Martijn Steinrucken (BigWings)",
+  "source": "https://github.com/libretro/glsl-shaders/blob/master/procedural/bigwings-luminescence.glsl",
+  "licence": "CC-BY-NC-SA-3.0",
+  "style": "nature",
+  "maxFPS": 10,
+  "scale": 0.3
+}

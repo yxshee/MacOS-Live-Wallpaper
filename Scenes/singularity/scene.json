@@ -1,0 +1,9 @@
+{
+  "title": "Singularity",
+  "author": "XorDev",
+  "source": "https://github.com/XorDev/Singularity",
+  "licence": "MIT",
+  "style": "scifi",
+  "maxFPS": 15,
+  "scale": 0.5
+}

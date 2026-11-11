@@ -1,0 +1,81 @@
+Golden-hour Ocean ("Open ocean at golden hour under a physically based sky")
+by gokayfem
+https://github.com/gokayfem/shader-skills/blob/main/gallery/ocean.glsl
+(shader-skills, commit a56e7738d3f22698e795f036b4919f0734ab621d, 2026-10-23)
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed.
+
+The licence statements that cover this shader
+---------------------------------------------
+
+1. The repository's LICENSE file, https://github.com/gokayfem/shader-skills/blob/main/LICENSE
+   (the full text is reproduced below). It begins:
+
+       MIT License
+
+       Copyright (c) 2026 gokayfem
+
+2. CREDITS.md, lines 3 to 6, https://github.com/gokayfem/shader-skills/blob/main/CREDITS.md :
+
+       All GLSL in this repository is an original implementation, released under the MIT license (see LICENSE). The
+       techniques come from the published work below. Numeric constants (matrices, fit coefficients, physical
+       coefficients) are facts reproduced from their sources. No third-party shader source is copied; Shadertoy shaders
+       default to CC BY-NC-SA 3.0, which is incompatible with MIT.
+
+3. The shader file's own header, gallery/ocean.glsl line 11:
+
+       // Library code below is bundled from shader-skills (MIT): https://github.com/gokayfem/shader-skills
+
+Provenance: the file credits no other shader author. CREDITS.md lists the
+published techniques it reimplements (among them Finch, GPU Gems chapter 1, for
+the sum-of-sines water; Troy Sobotka's AgX with Benjamin Wrensch's polynomial
+fit, listed there as MIT; Hillaire's atmosphere constants; Gustavson's simplex
+noise; Perlin and Neyret's flow noise; Jarzynski and Olano's PCG hashes) and
+states that no third-party shader source was copied. Port note: the numeric
+constants (matrices, fit coefficients, physical coefficients) are the facts
+CREDITS.md describes.
+
+What was changed
+----------------
+
+- mainImage and the out/inout parameters are written the Metal way, two local
+  array constructors are brace lists, and locals that wave() fills in are
+  initialised.
+- The waves, ripples and foam run at 0.45 times the original speed
+  (LW_TIME_SCALE) so the sea moves calmly behind desktop windows.
+- For cost, with the same output: ZERO is 0 instead of min(iFrame, 0), and the
+  wave table, the wave bounds, the sun transmittance and the zenith sky colour,
+  which the original recomputed for every pixel although they never change, are
+  stored as constants. The author's functions that produce them are kept in
+  the file.
+- scene.json: drawn at scale 0.4 and at most 10 frames a second.
+- Nothing else was touched. At the author's preview size and time (640x360,
+  t = 12.5, original speed) the port matches gallery/ocean.png to within 1/255
+  on every pixel.
+- preview.jpg is a frame rendered from this port.
+
+The licence text
+----------------
+
+MIT License
+
+Copyright (c) 2026 gokayfem
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

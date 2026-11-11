@@ -1,0 +1,113 @@
+Abyss by Ilia Reingold (ShaderDesk)
+https://github.com/ilrein/shaderdesk/blob/main/Scenes/Abyss.metal
+(ported from blob 5363e12d8024cf0f7ae34564c6b04c4ff7547e65, last changed in commit
+a9892e716a5a5ffe3835149e4a0f359f56e79cc2 of https://github.com/ilrein/shaderdesk)
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed.
+
+
+WHERE THE LICENCE IS STATED
+
+The shader file has no licence line of its own. It was written for the
+ShaderDesk repository, whose licence covers it:
+
+  https://github.com/ilrein/shaderdesk/blob/main/LICENSE
+  begins: "MIT License" / "Copyright (c) 2026 Ilia Reingold" / "Permission is
+  hereby granted, free of charge, to any person obtaining a copy of this
+  software and associated documentation files (the "Software"), to deal in the
+  Software without restriction, ..."
+
+  https://github.com/ilrein/shaderdesk/blob/main/README.md, last section,
+  "License": "MIT, see [LICENSE](LICENSE)."
+
+  CONTRIBUTING.md: "By contributing, you agree that your work is released
+  under the [MIT License](LICENSE)."
+
+Ilia Reingold (ilrein) is the only contributor to that repository.
+
+
+WHAT WAS CHANGED
+
+- The ShaderDesk wrapper (scene_frame with its Uniforms, Galaxy, Flare and bg
+  arguments, and the shared Common.metal) is replaced by mainImage(). The
+  display is the whole render target: q = fragCoord / height, one pixel is
+  1 / height.
+- The scene clock U.target.z is mod(iTime, 86400.0).
+- Agent activity (U.motion.z) is a calm constant 0; the per-display seed
+  (U.misc.w) is 0, the first display's value; brightness (U.misc.x) is 1.
+- ShaderDesk's present() is written out at the end of mainImage (tone map, sRGB
+  encode, 1/255 dither, NaN guard) because the output here is display-ready.
+- ShaderDesk's post-process bloom ("bloom: 0.18") is not available in a single
+  pass and is dropped.
+- hash11, hash12 and hash22 are copied in from ShaderDesk's Common.metal.
+- JELLIES and TAU are #defines, `inline` is dropped, pow(x, 2.0) is written
+  x * x where x can be negative, and locals are initialised.
+The scene's maths, constants and timings are otherwise as the author wrote
+them.
+
+
+THIRD-PARTY CODE
+
+hash11, hash12 and hash22 in main.metal are David Hoskins' "Hash without Sine"
+(https://www.shadertoy.com/view/4djSRW), taken via ShaderDesk's Common.metal,
+which does not credit him. Their licence is the MIT licence below. The notice
+is quoted from the header that David A Roberts' WGSL port of the same shader
+carries (https://gist.github.com/davidar/5f9677a0ccfbd63d7a8657ad9af3a856),
+because the Shadertoy page itself refuses automated access and could not be
+read. An older revision of that shader (a different formula, with "+ 19.19")
+is labelled Creative Commons Attribution-ShareAlike 4.0 in another copy; the
+functions here are the newer revision ("+ 33.33").
+
+The 1/255 dither in present() is the interleaved gradient noise formula
+published by Jorge Jimenez (SIGGRAPH 2014), as in the original's Common.metal.
+
+
+MIT LICENSE (the scene)
+
+MIT License
+
+Copyright (c) 2026 Ilia Reingold
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+MIT LICENSE (the hash functions)
+
+Hash without Sine https://www.shadertoy.com/view/4djSRW
+
+Copyright (c) 2014 David Hoskins
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

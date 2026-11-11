@@ -1,0 +1,10 @@
+{
+  "title": "Eclipse",
+  "author": "Ilia Reingold (ShaderDesk)",
+  "source": "https://github.com/ilrein/shaderdesk/blob/main/Scenes/Eclipse.metal",
+  "licence": "MIT",
+  "style": "nature",
+  "maxFPS": 12,
+  "scale": 0.75,
+  "channels": ["noise.png"]
+}

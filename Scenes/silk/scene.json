@@ -1,0 +1,9 @@
+{
+  "title": "Silk",
+  "author": "Adil Kairolla (MacPaper Engine)",
+  "source": "https://github.com/adilkairolla/macpaper-engine/blob/main/Samples/Silk.macpaper/shaders/silk.metal",
+  "licence": "MIT",
+  "style": "abstract",
+  "maxFPS": 15,
+  "scale": 0.5
+}

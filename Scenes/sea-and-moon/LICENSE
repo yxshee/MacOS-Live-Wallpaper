@@ -1,0 +1,62 @@
+Sea and Moon by Mårten Rånge (mrange)
+https://www.shadertoy.com/view/csfXzN
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed.
+
+Where the licence is stated
+---------------------------
+This port was made from the author's own HLSL version of the shader:
+https://github.com/mrange/windows-terminal-shader-gallery/blob/main/gallery/sea-and-moon/fragment-0.hlsl
+(repository state 46c900b4820cadb2b46546f74f17ba20bf43b56e, checked 2026-11-11).
+
+1. The metadata file stored beside that shader in the author's repository,
+   gallery/sea-and-moon/metadata.json (lines 4 to 7), reads:
+
+       "legal": {
+         "license-expressions": ["CC0-1.0"],
+         "authors": ["Mårten Rånge"]
+       },
+
+   https://github.com/mrange/windows-terminal-shader-gallery/blob/main/gallery/sea-and-moon/metadata.json
+
+2. The header of the original Shadertoy shader (csfXzN) reads:
+
+       // License CC0: Sea and moon
+       //  Tinkering with the colors of an old shaders to make it a better fit for windows terminal
+
+   Shadertoy does not allow automated fetching, so this header was read from
+   a verbatim copy of it on https://godotshaders.com/shader/sea-and-moon/
+   (a third-party Godot port, which that site labels MIT; nothing from that
+   port is used here). It agrees with item 1.
+
+The repository as a whole also carries an MIT LICENSE, "Copyright (c) 2022
+Mårten Rånge". The per-shader statement in item 1 is the more specific one and
+is the one used here; both come from the same author, and both allow this use.
+
+The HLSL file itself carries no licence header. One small helper in it,
+tanh_approx(), is marked "License: Unknown, author: Unknown, found: don't
+remember". It is not included in this port; see the next section.
+
+What was changed
+----------------
+- Removed the Windows Terminal wrapper and the blending of the terminal's text
+  over the picture; the shader draws the picture only.
+- Time and resolution come from iTime and iResolution; no coordinate flip is
+  needed with the bottom-left origin.
+- HLSL names became GLSL / Metal names; the mod() adapter and the unit2/3/4
+  constants were dropped; dot(dsea, dsea) on a scalar is written dsea*dsea.
+- tanh_approx() was replaced by the built-in tanh(), with its argument capped
+  at 15 (Metal's tanh overflows for large inputs). Every call in this shader
+  has k*h >= 25, where both give exactly 1.0; renders made with and without
+  the change were identical pixel for pixel at three different times.
+- The unused local d2 in sea() and the unused TAU constant were left out.
+- Wave motion, colours and constants are unchanged.
+- No images are shipped; the shader needs none.
+
+CC0 1.0 Universal
+-----------------
+To the extent possible under law, the author has waived all copyright and
+related rights to this work.
+
+https://creativecommons.org/publicdomain/zero/1.0/

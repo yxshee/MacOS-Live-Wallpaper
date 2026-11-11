@@ -1,0 +1,60 @@
+Day and Night Sky by DimensionAlmios (Dimension Almios)
+https://godotshaders.com/shader/day-and-night-sky-with-sun-moon-stars-and-clouds/
+
+The licence statement that covers this shader appears in two places.
+
+1. In the shader's own header comment:
+   "Day and Night Sky (free) by Dimension Almios, MIT licence."
+
+2. In the licence notice at the foot of the shader's page on Godot Shaders (the
+   page above):
+   "The shader code and all code snippets in this post are under MIT license and
+   can be used freely. Images and videos, and assets depicted in those, do not
+   fall under this license."
+   (the notice links the MIT licence, https://opensource.org/licenses/MIT, and
+   the site's terms, https://godotshaders.com/license/)
+
+This port contains the shader code only. No images, screenshots or other assets
+from the page are used.
+
+The shader's hash() helper follows the form of David Hoskins' "Hash without
+Sine" (the same constants, 0.1031 and 33.33), which is also published under the
+MIT licence, Copyright (c)2014 David Hoskins. The licence text below applies to
+that part as well.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for the full list of changes. In short:
+  - The Godot wrapper (shader_type, fragment(), UV, FRAGCOORD, TIME, COLOR, node
+    modulate) is removed and the exposed uniforms are constants at their
+    defaults.
+  - The time-of-day input `hour` is replaced by the real sky: the sun's height
+    comes from lwSunElevation and its east-west position from lwSunAzimuth, so
+    the sky follows the real day at the user's place. The moon's phase comes from
+    lwMoon, with its lit edge facing the sun. The dawn/dusk palette choice is a
+    smooth blend on the sun's side of the sky instead of hour < 12.
+  - Clouds drift at 0.4 of the original speed (cloud_speed 0.006).
+  - Metal syntax only otherwise: reversed-edge smoothstep() is a helper, and a
+    few names are changed. The cloud loop and the moon code are skipped where
+    their result is provably nothing.
+
+MIT License
+
+Copyright (c) Dimension Almios
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

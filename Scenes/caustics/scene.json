@@ -1,0 +1,9 @@
+{
+  "title": "Caustics",
+  "author": "Andre Hall (Noctura)",
+  "source": "https://github.com/DRAZY/noctura-screensaver/blob/main/src/scenes/Caustics.ts",
+  "licence": "MIT",
+  "style": "abstract",
+  "maxFPS": 15,
+  "scale": 0.5
+}

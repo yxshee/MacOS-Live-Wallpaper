@@ -1,0 +1,9 @@
+{
+  "title": "Iceberg",
+  "author": "Otavio Good",
+  "source": "https://github.com/libretro/glsl-shaders/blob/master/procedural/otaviogood-iceberg.glsl",
+  "licence": "CC0-1.0",
+  "style": "nature",
+  "maxFPS": 10,
+  "scale": 0.3
+}

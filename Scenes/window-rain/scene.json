@@ -1,0 +1,9 @@
+{
+  "title": "Window Rain Drops",
+  "author": "arlez80 (Yui Kinomoto)",
+  "source": "https://godotshaders.com/shader/procedural-window-rain-drop-shader/",
+  "licence": "MIT",
+  "style": "cosy",
+  "maxFPS": 12,
+  "scale": 0.7
+}

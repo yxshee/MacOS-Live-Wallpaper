@@ -1,0 +1,9 @@
+{
+  "title": "Hyperspace",
+  "author": "Mårten Rånge (mrange)",
+  "source": "https://github.com/mrange/synesthesia-public/tree/main/hyperspace.synScene",
+  "licence": "CC0-1.0",
+  "style": "scifi",
+  "maxFPS": 15,
+  "scale": 0.38
+}

@@ -1,0 +1,9 @@
+{
+  "title": "Day and Night Sky",
+  "author": "DimensionAlmios",
+  "source": "https://godotshaders.com/shader/day-and-night-sky-with-sun-moon-stars-and-clouds/",
+  "licence": "MIT",
+  "style": "stylised",
+  "maxFPS": 15,
+  "scale": 1
+}

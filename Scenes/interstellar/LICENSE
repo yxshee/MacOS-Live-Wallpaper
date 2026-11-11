@@ -1,0 +1,38 @@
+Interstellar by Hazel Quantock (TekF)
+https://www.shadertoy.com/view/Xdl3D2
+
+The author's notice in the shader reads: "This code is licensed under the CC0
+license http://creativecommons.org/publicdomain/zero/1.0/"
+
+Where that statement appears: lines 1 to 3 of the shader's own header
+("// Interstellar", "// Hazel Quantock", then the sentence above), in
+https://raw.githubusercontent.com/y4my4my4m/kde-shader-wallpaper/HEAD/package/contents/ui/Shaders/Interstellar.frag
+That copy was used as the source for this port; the Shadertoy page itself could
+not be fetched automatically, so the line was not cross-checked there. The
+header is the same in the copy as first added to that repository (commit
+734aec6a, restored from its older 3.x sources) and in the current one. The
+host repository is GPL-3.0 as a whole; this shader carries its own, separate
+CC0 notice, and the one edit that repository made to the file (a hash in place
+of the noise texture) was not used here: the hash in this port is written anew.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal. What was changed from the original:
+
+  - mainImage's output parameter is declared the Metal way (thread vec4&).
+  - The noise texture on iChannel0 (Shadertoy's 256x256 RGBA noise) is replaced
+    by an integer hash that gives one independent random vec4 per grid cell.
+    Only its .x was ever used. The unused Rand() function, which read the same
+    texture, is left out. No image is shipped with this scene.
+  - The animation clock is run at 0.3 of the author's speed (TIME_SCALE), so
+    one surge and stall of the fly-through takes about 42 seconds instead of
+    12.6 and the fastest streaks do not strobe at a wallpaper's frame rate.
+  - The divisor of the ray step is kept off zero, so a pixel exactly at the
+    centre of an odd-sized target cannot divide 0 by 0.
+  Nothing else: the grid march, its 20 steps, the constants and the colouring
+  are the author's.
+
+CC0 1.0 Universal
+
+To the extent possible under law, the author has waived all copyright and
+related rights to this work. See
+https://creativecommons.org/publicdomain/zero/1.0/

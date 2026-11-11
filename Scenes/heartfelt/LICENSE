@@ -1,0 +1,50 @@
+Heartfelt by Martijn Steinrucken aka BigWings (2017)
+Shadertoy: https://www.shadertoy.com/view/ltffzl
+
+Source of this port: Heartfelt.frag in the KDE Shader Wallpaper project,
+https://raw.githubusercontent.com/y4my4my4m/kde-shader-wallpaper/HEAD/package/contents/ui/Shaders/Heartfelt.frag
+(commit f9eed3d2f6d73f0a5c7e20ef00072be062f1d4bf of
+https://github.com/y4my4my4m/kde-shader-wallpaper). That project is GPL-3.0, but
+this shader is not covered by that: the shader carries its own licence in its
+own header, quoted below, and this port follows that licence.
+
+The author's notice, line 3 of the header of Heartfelt.frag at the address above,
+reads, word for word:
+
+  // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper; see the note at the
+top of main.metal for what was changed. In short:
+
+  - The image the original refracts through the raindrops (a photo supplied by
+    the host) is not shipped. It is replaced by LwNight() in main.metal, a soft
+    procedural picture of blurred night-city lights. That picture is ADDED BY THE
+    PORT; it is not part of the original and is not the author's work.
+  - Mouse input removed; time runs at 60% of real time and starts 10 seconds into
+    the author's 102-second story; the lightning flash is a gentle glow instead of
+    a flicker; a few lines were rewritten for Metal (smoothstep with reversed
+    edges, a vignette expression with an unordered side effect, the output
+    parameter).
+  - The author's algorithm, constants and look are otherwise unchanged.
+
+A note on one credit inside the author's code. The hash function N13() is
+marked in the author's own comment as "from DAVE HOSKINS" (his "Hash without
+Sine"). It is a few lines of arithmetic and is kept exactly as the author wrote
+it. A copy of Dave Hoskins' own shader source found in a third-party archive
+(github.com/tmsampson/enginejs, shader_joy/resources/shadertoy-downloader/
+shaders/Dave_Hoskins/Hash without Sine.fs) carries the header "Creative Commons
+Attribution-ShareAlike 4.0 International Public License. Created by David
+Hoskins." That is a different licence from the one on this shader, and it could
+not be checked against the Shadertoy page itself, which does not allow automated
+access, nor against the version that existed when Heartfelt was written in 2017.
+Anyone who needs the scene to contain no code from that source can replace N13()
+with a hash of their own; the look stays the same, with a different random
+arrangement of drops.
+
+This port is an adaptation of the original shader and is offered under the same
+licence, Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported. It
+may not be used commercially.
+
+Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0
+Unported License.
+https://creativecommons.org/licenses/by-nc-sa/3.0/

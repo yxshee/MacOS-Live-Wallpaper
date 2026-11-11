@@ -1,0 +1,44 @@
+Seascape by Alexander Alekseev aka TDM (2014)
+Original: https://www.shadertoy.com/view/Ms2SD1
+
+The author's notice in the shader's own header reads:
+
+    "License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License."
+
+It appears in the comment block at the top of Seascape.frag (the author's header,
+"Seascape by Alexander Alekseev aka TDM - 2014", with the contact tdmaav@gmail.com), as
+published at
+https://raw.githubusercontent.com/y4my4my4m/kde-shader-wallpaper/HEAD/package/contents/ui/Shaders/Seascape.frag
+That repository's own GPL-3.0 licence does not cover this shader; the author's statement
+above is the one relied on. The same statement, credited to the same author and to
+https://www.shadertoy.com/view/Ms2SD1, also appears in other independent copies of the
+code. (The Shadertoy page itself could not be read automatically.) The author's header
+is kept unchanged at the top of main.metal.
+
+Ported to Metal Shading Language for MacOS Live Wallpaper. What was changed:
+  - mainImage's and heightMapTracing's output parameters are declared as thread
+    references (Metal has no `out`).
+  - Two local variables that Metal does not zero (`p` in getPixel, `d` in map and
+    map_detailed) start at zero.
+  - The mouse term in `time` is removed (iMouse is always zero in a wallpaper).
+  - The horizon blend smoothstep(0.0, -0.02, y) is written as
+    1.0 - smoothstep(-0.02, 0.0, y): the same curve, without reversed edges, which
+    Metal leaves undefined.
+  - A ray that points at or above the horizon returns the sky colour straight away.
+    Its sea weight is exactly zero there and the camera is above every wave, so the
+    picture is the same; it only skips the trace.
+  - The camera (its turn, sway and forward drift) runs at 0.3 of the original speed
+    (LW_PACE), so the scene suits a desktop background. As written, the view swings
+    through a full turn every 21 seconds. The waves' own motion, the lighting, the
+    colours and every constant of the sea are unchanged.
+  - The author's optional 3x3 supersampling switch (#define AA) is turned off.
+No textures are used and none are shipped.
+
+This work is licensed under the Creative Commons
+Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported
+License: https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+This port is an adaptation of the original and is offered under the same licence
+(CC BY-NC-SA 3.0). You must credit the author, you may share and adapt it only under the
+same licence, and it may not be used commercially.
