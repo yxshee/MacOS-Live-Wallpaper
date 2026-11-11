@@ -48,7 +48,8 @@ jobs:
       - name: Notices match the scene manifests
         run: python3 scripts/update-notices.py --check
       - name: Every scene compiles and draws
-        # Hosted runners have a virtual GPU, so this is informational there;
-        # scripts/check-scenes.sh is the real gate, run locally.
-        continue-on-error: true
+        # Fails on a scene that does not compile or draws nothing. The cost
+        # limit is checked by scripts/check-scenes.sh, locally: hosted runners
+        # have a virtual GPU, so their timings mean nothing.
+        timeout-minutes: 10
         run: build/LiveWallpaper.app/Contents/MacOS/LiveWallpaper --check-scenes
