@@ -168,6 +168,18 @@ final class ShaderScene {
         enc.endEncoding()
     }
 
+    /// Shader time reaches the GPU as a 32-bit float, and many scenes travel
+    /// with it, so after some hours they lose precision or drift somewhere
+    /// dull (streaks turn to dots, waves lose their foam). Time past `limit`
+    /// is folded back into `base..<limit`; the first `base` seconds, where
+    /// scenes fade in, are not replayed.
+    static let timeBase = 60.0, timeRest = 1800.0, timeLimit = 3600.0
+    static func fold(_ t: Double, limit: Double) -> Double {
+        guard t.isFinite, t >= 0 else { return 0 }
+        guard t >= limit, limit > timeBase else { return t }
+        return timeBase + (t - timeBase).truncatingRemainder(dividingBy: limit - timeBase)
+    }
+
     /// The inputs every shader scene is given, including the real sky, so an
     /// imported scene can follow the actual day if it wants to.
     static func uniforms(pixels: CGSize, pixelsPerPoint: CGFloat, elapsed: Double, delta: Double,

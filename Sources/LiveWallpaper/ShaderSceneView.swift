@@ -49,6 +49,8 @@ final class ShaderSceneView: NSView, SceneHost {
     var playing = false {
         didSet {
             guard playing != oldValue else { return }
+            // Coming back from hidden: the one moment a jump in time cannot be seen.
+            if playing { elapsed = ShaderScene.fold(elapsed, limit: ShaderScene.timeRest) }
             last = CACurrentMediaTime()
             needsFrame = true
             link?.isPaused = !playing
@@ -57,7 +59,7 @@ final class ShaderSceneView: NSView, SceneHost {
 
     init(frame: NSRect, scene: ShaderScene) {
         self.scene = scene
-        elapsed = ShaderSceneView.carried[scene.descriptor.id] ?? 0
+        elapsed = ShaderScene.fold(ShaderSceneView.carried[scene.descriptor.id] ?? 0, limit: ShaderScene.timeRest)
         pixelsPerPoint = CGFloat(scene.descriptor.scale)
         super.init(frame: frame)
         wantsLayer = true
@@ -123,7 +125,7 @@ final class ShaderSceneView: NSView, SceneHost {
         guard let renderer = Renderer.shared, scene.pipeline != nil, bounds.width > 0, bounds.height > 0 else { return }
         let delta = playing ? min(now - last, max(0.25, 2 / Double(max(fps, 1)))) : 0
         last = now
-        elapsed += delta
+        elapsed = ShaderScene.fold(elapsed + delta, limit: ShaderScene.timeLimit)   // a visible cut, once an hour, only if never hidden
 
         let conditions = Conditions.shared
         var want = FramePolicy.rate(conditions.framePolicy, hint: .lively, cap: scene.descriptor.maxFPS)

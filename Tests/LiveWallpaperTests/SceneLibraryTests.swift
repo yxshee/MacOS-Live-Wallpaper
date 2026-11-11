@@ -2,6 +2,20 @@ import XCTest
 @testable import LiveWallpaper
 
 final class FramePolicyTests: XCTestCase {
+    func testShaderTimeIsFoldedBackWithoutReplayingTheStart() {
+        XCTAssertEqual(ShaderScene.fold(0, limit: 3600), 0)
+        XCTAssertEqual(ShaderScene.fold(3599.5, limit: 3600), 3599.5)
+        XCTAssertEqual(ShaderScene.fold(3600, limit: 3600), 60)
+        XCTAssertEqual(ShaderScene.fold(90_000, limit: 1800), 60 + (90_000 - 60).truncatingRemainder(dividingBy: 1740), accuracy: 1e-9)
+        XCTAssertEqual(ShaderScene.fold(-5, limit: 3600), 0)
+        XCTAssertEqual(ShaderScene.fold(.infinity, limit: 3600), 0)
+        for t in stride(from: 0.0, through: 400_000, by: 977.3) {
+            let folded = ShaderScene.fold(t, limit: ShaderScene.timeLimit)
+            XCTAssertTrue(folded >= 0 && folded < ShaderScene.timeLimit, "\(t) -> \(folded)")
+            if t >= ShaderScene.timeLimit { XCTAssertGreaterThanOrEqual(folded, ShaderScene.timeBase) }
+        }
+    }
+
     typealias C = FramePolicy.Conditions
 
     func testQuietPicturesCostLessThanBusyOnes() {
