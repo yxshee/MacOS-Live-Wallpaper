@@ -133,6 +133,9 @@ final class SceneRegistry {
             guard let size = ShaderScene.pixelSize(of: folder.appendingPathComponent(name)) else {
                 return .failure(Problem(message: "\(name) is missing or is not an image"))
             }
+            guard !ShaderScene.isGreyWithAlpha(folder.appendingPathComponent(name)) else {
+                return .failure(Problem(message: "\(name) is grey with an alpha channel; save it as plain grey or as RGB"))
+            }
             guard max(size.width, size.height) <= ShaderScene.maxChannelSide else {
                 return .failure(Problem(message: "\(name) is \(size.width)×\(size.height); images may be at most \(ShaderScene.maxChannelSide) pixels a side"))
             }

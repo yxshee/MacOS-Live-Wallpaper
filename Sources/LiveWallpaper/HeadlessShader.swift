@@ -31,7 +31,7 @@ enum Snapshot {
     @discardableResult
     static func write(_ image: CGImage, to path: String) -> Bool {
         let url = URL(fileURLWithPath: path)
-        let type = url.pathExtension.lowercased() == "jpg" ? UTType.jpeg : UTType.png
+        let type = ["jpg", "jpeg"].contains(url.pathExtension.lowercased()) ? UTType.jpeg : UTType.png
         guard let dest = CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, 1, nil) else { return false }
         CGImageDestinationAddImage(dest, image, [kCGImageDestinationLossyCompressionQuality: 0.88] as CFDictionary)
         return CGImageDestinationFinalize(dest)

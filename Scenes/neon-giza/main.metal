@@ -32,7 +32,7 @@
 //    over. tanh_approx() (a rational approximation of tanh) is replaced by the
 //    built-in tanh(), with its argument capped because Metal's tanh overflows
 //    for large inputs; the tone curve differs from the approximation by under
-//    2 per cent. hash() is replaced by an integer hash written for this port,
+//    3 per cent. hash() is replaced by an integer hash written for this port,
 //    so the arcs' random tilts are different numbers of the same kind.
 //  - Metal syntax: out/inout parameters became thread references (a swizzle
 //    cannot be passed that way, so the two rot(p.xy, ...) calls go through a

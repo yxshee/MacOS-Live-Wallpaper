@@ -39,6 +39,26 @@ final class ShaderScene {
     static func assemble(prelude: String, scene: String) -> String {
         """
         \(prelude)
+        // smoothstep as GLSL shaders rely on it. Metal leaves the built-in
+        // undefined when the edges are given high-then-low, which GLSL code
+        // does all the time; this is the plain formula, the same either way
+        // round. Plain functions behind a macro, so they are found from
+        // nested types and do not clash with a scene's own helpers.
+        static inline float lw_smoothstep(float a, float b, float x) { float t = clamp((x - a) / (b - a), float(0.0), float(1.0)); return t * t * (float(3.0) - float(2.0) * t); }
+        static inline float2 lw_smoothstep(float2 a, float2 b, float2 x) { float2 t = clamp((x - a) / (b - a), float2(0.0), float2(1.0)); return t * t * (float2(3.0) - float2(2.0) * t); }
+        static inline float3 lw_smoothstep(float3 a, float3 b, float3 x) { float3 t = clamp((x - a) / (b - a), float3(0.0), float3(1.0)); return t * t * (float3(3.0) - float3(2.0) * t); }
+        static inline float4 lw_smoothstep(float4 a, float4 b, float4 x) { float4 t = clamp((x - a) / (b - a), float4(0.0), float4(1.0)); return t * t * (float4(3.0) - float4(2.0) * t); }
+        static inline float2 lw_smoothstep(float a, float b, float2 x) { float2 t = clamp((x - a) / (b - a), float2(0.0), float2(1.0)); return t * t * (float2(3.0) - float2(2.0) * t); }
+        static inline float3 lw_smoothstep(float a, float b, float3 x) { float3 t = clamp((x - a) / (b - a), float3(0.0), float3(1.0)); return t * t * (float3(3.0) - float3(2.0) * t); }
+        static inline float4 lw_smoothstep(float a, float b, float4 x) { float4 t = clamp((x - a) / (b - a), float4(0.0), float4(1.0)); return t * t * (float4(3.0) - float4(2.0) * t); }
+        static inline half lw_smoothstep(half a, half b, half x) { half t = clamp((x - a) / (b - a), half(0.0), half(1.0)); return t * t * (half(3.0) - half(2.0) * t); }
+        static inline half2 lw_smoothstep(half2 a, half2 b, half2 x) { half2 t = clamp((x - a) / (b - a), half2(0.0), half2(1.0)); return t * t * (half2(3.0) - half2(2.0) * t); }
+        static inline half3 lw_smoothstep(half3 a, half3 b, half3 x) { half3 t = clamp((x - a) / (b - a), half3(0.0), half3(1.0)); return t * t * (half3(3.0) - half3(2.0) * t); }
+        static inline half4 lw_smoothstep(half4 a, half4 b, half4 x) { half4 t = clamp((x - a) / (b - a), half4(0.0), half4(1.0)); return t * t * (half4(3.0) - half4(2.0) * t); }
+        static inline half2 lw_smoothstep(half a, half b, half2 x) { half2 t = clamp((x - a) / (b - a), half2(0.0), half2(1.0)); return t * t * (half2(3.0) - half2(2.0) * t); }
+        static inline half3 lw_smoothstep(half a, half b, half3 x) { half3 t = clamp((x - a) / (b - a), half3(0.0), half3(1.0)); return t * t * (half3(3.0) - half3(2.0) * t); }
+        static inline half4 lw_smoothstep(half a, half b, half4 x) { half4 t = clamp((x - a) / (b - a), half4(0.0), half4(1.0)); return t * t * (half4(3.0) - half4(2.0) * t); }
+        #define smoothstep lw_smoothstep
         #define in
         struct LWScene {
             float iTime; float iTimeDelta; int iFrame;
@@ -46,20 +66,11 @@ final class ShaderScene {
             float3 iChannelResolution[2];
             texture2d<float> iChannel0; texture2d<float> iChannel1;
             float lwSunElevation; float lwSunAzimuth; float lwDaylight; float lwMoon;
-            // smoothstep as GLSL shaders rely on it. Metal leaves the built-in
-            // undefined when the edges are given high-then-low, which GLSL code
-            // does all the time; this is the plain formula, the same either way round.
-            float  smoothstep(float a, float b, float x)    { float  t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-            float2 smoothstep(float2 a, float2 b, float2 x) { float2 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-            float3 smoothstep(float3 a, float3 b, float3 x) { float3 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-            float4 smoothstep(float4 a, float4 b, float4 x) { float4 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-            float2 smoothstep(float a, float b, float2 x)   { float2 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-            float3 smoothstep(float a, float b, float3 x)   { float3 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-            float4 smoothstep(float a, float b, float4 x)   { float4 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
         #line 1 "main.metal"
         \(scene)
         };
         #undef in
+        #undef smoothstep
         fragment float4 lw_fragment(VOut in [[stage_in]], constant LWUniforms &lw [[buffer(0)]],
                                     texture2d<float> c0 [[texture(0)]], texture2d<float> c1 [[texture(1)]]) {
             LWScene s;
@@ -153,11 +164,22 @@ final class ShaderScene {
 
     /// An image's size from its header, without decoding it.
     static func pixelSize(of url: URL) -> (width: Int, height: Int)? {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+        guard let properties = imageProperties(of: url),
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
               let height = properties[kCGImagePropertyPixelHeight] as? Int, width > 0, height > 0 else { return nil }
         return (width, height)
+    }
+
+    /// Grey with an alpha channel loads as a two-channel texture that shaders read wrongly.
+    static func isGreyWithAlpha(_ url: URL) -> Bool {
+        guard let properties = imageProperties(of: url) else { return false }
+        return (properties[kCGImagePropertyColorModel] as? String) == (kCGImagePropertyColorModelGray as String)
+            && (properties[kCGImagePropertyHasAlpha] as? Bool) == true
+    }
+
+    private static func imageProperties(of url: URL) -> [CFString: Any]? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
     }
 
     /// A grey-scale image loads as a one-channel texture, which a shader would
@@ -167,8 +189,6 @@ final class ShaderScene {
         switch texture.pixelFormat {
         case .r8Unorm, .r16Unorm, .r16Float, .r32Float:
             swizzle = MTLTextureSwizzleChannels(red: .red, green: .red, blue: .red, alpha: .one)
-        case .rg8Unorm, .rg16Unorm:                                  // grey with alpha
-            swizzle = MTLTextureSwizzleChannels(red: .red, green: .red, blue: .red, alpha: .green)
         default:
             return texture
         }

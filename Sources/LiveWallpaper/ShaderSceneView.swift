@@ -37,6 +37,8 @@ final class ShaderSceneView: NSView, SceneHost {
     private var overBudget = 0, underBudget = 0
     private var fullRate: Float = 0             // the rate asked for before any throttling
     private var failedFrames = 0
+    private var firstFailure = 0.0
+    private var firstFrameRetries = 0
     private var throttled = false               // resolution is at its floor and the scene is still heavy
     private var gpuMillis = 0.0
     private(set) var fps: Float = 0
@@ -51,17 +53,22 @@ final class ShaderSceneView: NSView, SceneHost {
     var playing = false {
         didSet {
             guard playing != oldValue else { return }
-            // Coming back from hidden: the one moment a jump in time cannot be seen.
-            if playing { elapsed = ShaderScene.fold(elapsed, limit: ShaderScene.timeRest) }
             last = CACurrentMediaTime()
             needsFrame = true
             link?.isPaused = !playing
+            // Just hidden: the one moment a jump in time cannot be seen. Fold
+            // the clock now and redraw, so that the picture waiting when the
+            // wallpaper is uncovered is already the one time resumes from.
+            if !playing, elapsed >= ShaderScene.timeRest {
+                elapsed = ShaderScene.fold(elapsed, limit: ShaderScene.timeRest)
+                drawNow()
+            }
         }
     }
 
     init(frame: NSRect, scene: ShaderScene) {
         self.scene = scene
-        elapsed = ShaderScene.fold(ShaderSceneView.carried[scene.descriptor.id] ?? 0, limit: ShaderScene.timeRest)
+        elapsed = ShaderScene.fold(ShaderSceneView.carried[scene.descriptor.id] ?? 0, limit: ShaderScene.timeLimit)
         pixelsPerPoint = CGFloat(scene.descriptor.scale)
         super.init(frame: frame)
         wantsLayer = true
@@ -115,6 +122,19 @@ final class ShaderSceneView: NSView, SceneHost {
         guard window != nil else { return }
         needsFrame = true
         renderFrame(now: CACurrentMediaTime())
+        if !confirmedFirstFrame, !playing { retryFirstFrame() }
+    }
+
+    /// Until one frame has succeeded the window is invisible, and while the
+    /// wallpaper is not playing nothing else would ask for another. So ask
+    /// again, a few times a second for a while, then leave it to `playing`.
+    private func retryFirstFrame() {
+        guard firstFrameRetries < 40, scene.pipeline != nil else { return }
+        firstFrameRetries += 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self, self.link != nil, !self.confirmedFirstFrame, !self.playing else { return }
+            self.drawNow()
+        }
     }
 
     @objc private func tick(_ sender: CADisplayLink) {
@@ -186,8 +206,12 @@ final class ShaderSceneView: NSView, SceneHost {
             // session that is switched out, for one); three in a row while
             // really playing means this scene cannot be drawn here.
             guard playing else { return }
+            let now = CACurrentMediaTime()
+            if failedFrames == 0 { firstFailure = now }
             failedFrames += 1
-            if failedFrames >= 3 {
+            // Three, and spread over a second: frames queued while switched
+            // out can all report at once.
+            if failedFrames >= 3, now - firstFailure >= 1 {
                 onFailure?("The graphics driver rejected this scene's frames.")
                 onFailure = nil
             } else {

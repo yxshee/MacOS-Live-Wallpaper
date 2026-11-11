@@ -41,7 +41,7 @@ enum Headless {
             print(usage)
             exit(unknown.isEmpty ? 0 : 2)
         }
-        // Every option but these four takes a value, and a missing or
+        // Every option but these three takes a value, and a missing or
         // unreadable one is an error rather than a silent default.
         let bare: Set<String> = ["--help", "--check-scenes", "--list-scenes"]
         for flag in known.subtracting(bare) where args.contains(flag) {
@@ -53,6 +53,13 @@ enum Headless {
         }
         if let v = value("--bench"), (Int(v) ?? 0) < 1 { fail("--bench must be a whole number of frames, 1 or more") }
         if args.contains("--scene"), args.contains("--scene-dir") { fail("Pass --scene or --scene-dir, not both") }
+        if args.contains("--check-scenes") || args.contains("--list-scenes") {
+            let allowed: Set<String> = args.contains("--check-scenes") ? ["--check-scenes", "--previews"] : ["--list-scenes"]
+            let extra = args.dropFirst().filter { $0.hasPrefix("--") && !allowed.contains($0) }
+            if !extra.isEmpty { fail("\(extra.joined(separator: " ")) cannot be used with \(allowed.sorted().first!)") }
+        } else if args.contains("--previews") {
+            fail("--previews goes with --check-scenes")
+        }
         if args.contains("--list-scenes") {
             for s in SceneRegistry.shared.scenes {
                 print("\(s.id)\t\(s.style.rawValue)\t\(s.licence)\t\(s.credit)")
@@ -220,13 +227,10 @@ enum Headless {
                 if let ridgeTarget, let ridgeImage = image(ridgeTarget, alpha: .premultipliedFirst) {
                     ctx.draw(ridgeImage, in: CGRect(x: 0, y: 0, width: ridgeSize.width, height: ridgeSize.height))
                 }
-                if let out = ctx.makeImage(),
-                   let dest = CGImageDestinationCreateWithURL(URL(fileURLWithPath: path) as CFURL,
-                                                              UTType.png.identifier as CFString, 1, nil) {
-                    CGImageDestinationAddImage(dest, out, nil)
-                    CGImageDestinationFinalize(dest)
-                }
+                if let out = ctx.makeImage(), Snapshot.write(out, to: path) { exit(0) }
             }
+            FileHandle.standardError.write(Data("\(path) could not be written\n".utf8))
+            exit(1)
         }
         exit(0)
     }

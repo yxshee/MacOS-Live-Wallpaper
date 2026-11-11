@@ -229,9 +229,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let wanted = signature()
         guard wanted != builtFor else { return }
         builtFor = wanted
-        closeOutgoing()
-        let old = windows
+        var old = windows
         old.forEach { $0.retire() }
+        if !outgoing.isEmpty, !old.allSatisfy(\.revealed) {
+            // The windows being replaced never got a picture (the scene was
+            // changed again while compiling). Drop those, and keep showing the
+            // ones from before them until the newest have drawn.
+            old.forEach { $0.close() }
+            old = outgoing
+            outgoing = []
+        }
+        closeOutgoing()
         let c = choice, url = videoURL
         windows = NSScreen.screens.compactMap { screen in
             WallpaperWindow(screen: screen, sceneID: c, videoURL: url,

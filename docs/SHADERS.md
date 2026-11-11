@@ -35,7 +35,7 @@ The folder name is the scene's id: letters, digits, `-` and `_` only. `horizon`,
 | `maxFPS` | The most frames a second it is ever drawn at (1 to 60, default 20). The app lowers this itself on battery, when another app is in front, and in Low Power Mode: a scene set to 30 is drawn at 30 only while you are looking at the desktop on mains power, and at 15 behind another app. |
 | `scale` | Pixels drawn per point of screen (0.125 to 2, default 0.5). 0.5 means half the points each way, a sixteenth of a Retina display's pixels. Soft scenes look fine at 0.35 to 0.5; scenes with thin lines or small stars want 1. |
 | `also` | Optional. One line naming anyone else's work inside the scene and its terms, such as `hash functions by David Hoskins (MIT)`. It is printed in `THIRD_PARTY_NOTICES.md`; the notice itself goes in `LICENSE`. |
-| `channels` | Up to two image files in the folder, bound as `iChannel0` and `iChannel1`. Each may be at most 4096 pixels a side. A grey-scale image reads as grey in `.rgb`, as it would in GLSL. |
+| `channels` | Up to two image files in the folder, bound as `iChannel0` and `iChannel1`. Each may be at most 4096 pixels a side. A grey-scale image reads as grey in `.rgb`, as it would in GLSL; grey with an alpha channel is not accepted. |
 
 ## The shader
 
@@ -74,7 +74,7 @@ The last four let a scene follow the actual day. They are optional.
 
 ### What the prelude gives you
 
-GLSL type names (`vec2`, `vec3`, `vec4`, `ivec2`…, `mat2`, `mat3`, `mat4`), GLSL-style `mod`, two-argument `atan`, a `smoothstep` that also works with its edges given high-then-low (Metal's own is undefined that way round), `inversesqrt`, `dFdx`/`dFdy`, `texture(iChannel0, uv)`, `textureLod`, `texelFetch`, `textureSize`, and the samplers `lwRepeat`, `lwClamp`, `lwNearest`. See `Resources/ScenePrelude.metal`.
+GLSL type names (`vec2`, `vec3`, `vec4`, `ivec2`…, `mat2`, `mat3`, `mat4`), GLSL-style `mod`, two-argument `atan`, a `smoothstep` that also works with its edges given high-then-low (Metal's own is undefined that way round; inside a scene the name is a macro for this one, so a scene that defines its own must give it another name), `inversesqrt`, `dFdx`/`dFdy`, `texture(iChannel0, uv)`, `textureLod`, `texelFetch`, `textureSize`, and the samplers `lwRepeat`, `lwClamp`, `lwNearest`. See `Resources/ScenePrelude.metal`.
 
 ## Porting from GLSL
 
