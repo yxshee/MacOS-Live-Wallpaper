@@ -12,8 +12,8 @@ using namespace metal;
 //           (a few times a minute), so the sharpest part of the picture is
 //           also the part that costs almost nothing.
 //
-// All noise comes from one small pre-baked texture, so nothing here loops over
-// octaves. Colours are held squared (close to linear light) and square-rooted
+// Clouds, aurora and mist take their noise from one small pre-baked texture, so
+// nothing here loops over octaves (stars use a hash). Colours are held squared (close to linear light) and square-rooted
 // on the way out.
 
 #define LAYERS 6
@@ -176,7 +176,8 @@ fragment float4 skyFragment(VOut in [[stage_in]],
         float tt = t + 0.40;
         // The noise tile repeats, so a slow warp and a second octave at an
         // incommensurate scale keep the deck from repeating across a wide screen.
-        // (The warp depends on x alone, so it slides clouds sideways without shearing them.)
+        // (The warp depends on x alone and shifts the lookup vertically, so the
+        // deck drifts gently up and down across the screen.)
         float warp = noise.sample(tile, float2(w.x * 0.045 + 0.2, 0.37), level(0)).g - 0.5;
         float2 P0 = float2(w.x / tt, 1.7 / tt + warp * 1.6) * 0.42;
         float2 P = P0 + float2(u.clock.y, 0.0);

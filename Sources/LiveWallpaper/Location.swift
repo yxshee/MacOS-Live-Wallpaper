@@ -33,19 +33,49 @@ enum Location {
         if let c = table[zone.identifier] {
             return Place(latitude: c.latitude, longitude: c.longitude, source: .zoneCity(zone.identifier))
         }
-        // Older names such as Asia/Calcutta are not in the table, but their
-        // rule file is byte-for-byte the file of the zone that replaced them.
+        // Older names that macOS still offers but the table has dropped.
+        if let current = legacyNames[zone.identifier], let c = table[current] {
+            return Place(latitude: c.latitude, longitude: c.longitude, source: .zoneCity(current))
+        }
+        // Any other name missing from the table: its rule file is byte-for-byte
+        // the file of the zone that replaced it.
+        // Several zones can share one rule file (Reykjavik and Abidjan, Auckland
+        // and McMurdo), so among the matches prefer an inhabited zone whose city
+        // lies nearest the longitude the clock offset implies.
+        let standard = Double(zone.secondsFromGMT()) - zone.daylightSavingTimeOffset()
+        let offsetLongitude = max(-180, min(180, standard / 240))
         if let data = FileManager.default.contents(atPath: "\(zoneinfo)/\(zone.identifier)") {
-            for id in table.keys.sorted() where FileManager.default.contents(atPath: "\(zoneinfo)/\(id)") == data {
-                let c = table[id]!
+            var matches = table.keys.filter { FileManager.default.contents(atPath: "\(zoneinfo)/\($0)") == data }
+            let inhabited = matches.filter { !$0.hasPrefix("Antarctica/") }
+            if !inhabited.isEmpty { matches = inhabited }
+            let region = zone.identifier.split(separator: "/").first.map(String.init) ?? ""
+            let sameRegion = matches.filter { $0.hasPrefix(region + "/") }
+            if !sameRegion.isEmpty { matches = sameRegion }
+            if let id = matches.sorted().min(by: {
+                abs(table[$0]!.longitude - offsetLongitude) < abs(table[$1]!.longitude - offsetLongitude)
+            }), let c = table[id] {
                 return Place(latitude: c.latitude, longitude: c.longitude, source: .zoneCity(id))
             }
         }
         // Last resort: the standard-time offset gives the longitude to within a
         // zone's width. The latitude is unknowable; mid-northern is the commonest case.
-        let standard = Double(zone.secondsFromGMT()) - zone.daylightSavingTimeOffset()
-        return Place(latitude: 30, longitude: max(-180, min(180, standard / 3600 * 15)), source: .offsetGuess)
+        return Place(latitude: 30, longitude: offsetLongitude, source: .offsetGuess)
     }
+
+    /// The time-zone names macOS lists that `zone.tab` no longer carries, and their successors.
+    static let legacyNames: [String: String] = [
+        "America/Godthab": "America/Nuuk", "America/Montreal": "America/Toronto",
+        "America/Nipigon": "America/Toronto", "America/Pangnirtung": "America/Iqaluit",
+        "America/Rainy_River": "America/Winnipeg", "America/Santa_Isabel": "America/Tijuana",
+        "America/Shiprock": "America/Denver", "America/Thunder_Bay": "America/Toronto",
+        "America/Yellowknife": "America/Edmonton", "Antarctica/South_Pole": "Antarctica/McMurdo",
+        "Asia/Calcutta": "Asia/Kolkata", "Asia/Choibalsan": "Asia/Ulaanbaatar",
+        "Asia/Chongqing": "Asia/Shanghai", "Asia/Harbin": "Asia/Shanghai", "Asia/Kashgar": "Asia/Urumqi",
+        "Asia/Katmandu": "Asia/Kathmandu", "Asia/Rangoon": "Asia/Yangon", "Australia/Currie": "Australia/Hobart",
+        "Europe/Kiev": "Europe/Kyiv", "Europe/Uzhgorod": "Europe/Kyiv", "Europe/Zaporozhye": "Europe/Kyiv",
+        "Pacific/Enderbury": "Pacific/Kanton", "Pacific/Johnston": "Pacific/Honolulu",
+        "Pacific/Ponape": "Pacific/Pohnpei", "Pacific/Truk": "Pacific/Chuuk",
+    ]
 
     /// Zone identifier to coordinates, from `zone.tab`.
     static func zoneTable(zoneinfo: String = systemZoneinfo) -> [String: (latitude: Double, longitude: Double)] {

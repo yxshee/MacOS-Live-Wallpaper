@@ -25,7 +25,7 @@ The default scene is a range of mountains under a sky that tracks the actual sun
 - A Mac with a Metal-capable GPU
 - To build: Xcode or the Xcode Command Line Tools (`xcode-select --install`)
 
-It has been developed and tested on one machine: an Apple Silicon MacBook Pro running macOS 27, on its built-in Retina display and with an external 4K monitor attached. CI builds and unit-tests it on macOS 14 and 15. Intel Macs and desktop widgets are expected to work but have not been tried; see [Known limits](#known-limits), and please [open an issue](../../issues) if something is off on yours.
+It has been developed and tested on one machine: an Apple Silicon MacBook Pro running macOS 27, on its built-in Retina display and with an external 4K monitor attached. CI builds and unit-tests it on GitHub's macOS 15 and latest runners; macOS 14 is the declared minimum but has not been run. Intel Macs and desktop widgets are expected to work but have not been tried; see [Known limits](#known-limits), and please [open an issue](../../issues) if something is off on yours.
 
 ## Install
 
@@ -37,7 +37,7 @@ cd MacOS-Live-Wallpaper
 ./scripts/build-app.sh --install
 ```
 
-That builds `build/LiveWallpaper.app`, copies it to `~/Applications` and starts it. Without `--install` it only builds, and touches nothing outside the folder.
+That builds `build/LiveWallpaper.app`, copies it to `~/Applications` and starts it. Without `--install` it only builds, writing into `./build` and SwiftPM's `./.build`.
 
 A mountain icon appears in the menu bar. There is no Dock icon and no window: the wallpaper is drawn behind your desktop icons.
 
@@ -55,9 +55,11 @@ Everything is in the mountain icon's menu.
 | Pause | Freeze the picture. |
 | Launch at Login | Start with your Mac. macOS may ask you to approve it in System Settings. |
 
+The first line of the menu says what the wallpaper is doing, for example "Running at 10 frames a second". Sky, Location…, New Landscape and Lean Toward Pointer appear only while the Horizon scene is chosen.
+
 ### Location
 
-By default the app does not know where you are. It takes the reference city of your Mac's time zone from the system's own time-zone table, which needs no permission and sends nothing anywhere. If you live far from that city, sunrise and sunset can be off by up to an hour or so.
+By default the app does not know where you are. It takes the reference city of your Mac's time zone from the system's own time-zone table, which needs no permission and sends nothing anywhere. If you live far from that city, sunrise and sunset can be off by up to an hour or so. A time zone with no city (plain GMT, for example) falls back to a guess at 30°N; the Location… dialog always says which source is in use.
 
 For times that are right to within a few minutes, choose **Location…** and enter your coordinates in decimal degrees (south and west are negative). You can find them by right-clicking a spot in most map apps.
 
@@ -66,8 +68,8 @@ For times that are right to within a few minutes, choose **Location…** and ent
 The design goal is that you can leave it on all day on battery.
 
 - **Nothing when hidden.** If every part of the desktop is covered (a full-screen app, say), the display is asleep, or another user is logged in, it stops drawing completely.
-- **Only as many frames as the picture needs.** One frame a second when nothing but the sun is moving (a clear day); ten while you work in another app; twenty when the desktop is in front; more only while the ridges are moving, and full speed only for the second a shooting star takes. On battery the rates drop, and in Low Power Mode it draws five frames a second at lower resolution.
-- **Little work per frame.** The soft parts of the sky are painted at a quarter of the sky's resolution. The sharp mountain layer is separate and is redrawn only when the light has changed, a few times a minute. All noise comes from one small texture baked at launch.
+- **Only as many frames as the picture needs.** One frame a second when nothing but the sun is moving (a clear day); up to ten while you work in another app; up to twenty when the desktop is in front (that is, Finder is the active app); thirty while the ridges are following the pointer, and up to sixty only for the second a shooting star takes. On battery the rates drop. In Low Power Mode, or when the Mac is running hot, it draws at most five frames a second at lower resolution, stops the pointer lean and shooting stars, and pauses a video wallpaper.
+- **Little work per frame.** The soft parts of the sky are painted at a quarter of the sky's resolution. The sharp mountain layer is separate and is redrawn only when the light has changed, a few times a minute. Clouds, aurora and mist take their noise from one small texture baked at launch.
 
 Measured on an M5 Pro MacBook Pro at 4112×2658:
 
@@ -83,7 +85,7 @@ You can reproduce the GPU figures with `--bench`; see [CONTRIBUTING.md](CONTRIBU
 
 ## Known limits
 
-- **Accuracy.** The sun's position is good to a small fraction of a degree. The moon's position and phase are good to about half a degree. Refraction is ignored, so rise and set times can be a few minutes off even with exact coordinates.
+- **Accuracy.** The sun's position is good to a small fraction of a degree. The moon's phase is good to about half a degree; its position can be off by up to about a degree near the horizon, because refraction and the moon's parallax are ignored. Rise and set times can therefore be a few minutes off even with exact coordinates.
 - **The view is a picture, not a planetarium.** The sun and moon are placed by their real direction and height; the star field and Milky Way are invented and only turn at the real rate. The aurora appears at every latitude.
 - **Not a signed app.** A copy you build yourself runs without fuss. A copy built on another Mac and sent to you will be blocked by Gatekeeper until you allow it, which is why there are no downloads here yet.
 - **Untested set-ups.** Intel Macs, three or more displays, desktop widgets, Stage Manager and "Click wallpaper to reveal desktop" have not been tried.

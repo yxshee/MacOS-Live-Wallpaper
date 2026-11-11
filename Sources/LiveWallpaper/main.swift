@@ -1,8 +1,8 @@
 import AppKit
 
-// `--render`, `--bench` and `--help` draw frames off screen and exit; see Headless.swift.
-let headlessFlags: Set<String> = ["--render", "--bench", "--help"]
-if !headlessFlags.isDisjoint(with: CommandLine.arguments) {
+// Any `--option` is a request to draw off screen and exit (see Headless.swift);
+// unknown ones are rejected there. A mistyped flag must never start a wallpaper.
+if CommandLine.arguments.dropFirst().contains(where: { $0.hasPrefix("--") }) {
     Headless.run(CommandLine.arguments)
 }
 

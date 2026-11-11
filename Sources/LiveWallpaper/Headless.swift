@@ -16,7 +16,11 @@ enum Headless {
             guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
             return args[i + 1]
         }
-        let known: Set<String> = ["--render", "--bench", "--size", "--scale", "--date", "--hour", "--sky", "--scene",
+        func fail(_ message: String) -> Never {
+            FileHandle.standardError.write(Data((message + "\n").utf8))
+            exit(2)
+        }
+        let known: Set<String> = ["--help", "--render", "--bench", "--size", "--scale", "--date", "--hour", "--sky", "--scene",
                                   "--seed", "--t", "--cloud", "--aurora", "--meteor", "--parallax", "--lat", "--lon"]
         let unknown = args.dropFirst().filter { $0.hasPrefix("--") && !known.contains($0) }
         if !unknown.isEmpty || args.contains("--help") {
@@ -34,11 +38,28 @@ enum Headless {
             print(usage)
             exit(unknown.isEmpty ? 0 : 2)
         }
-        let model = SceneModel.shared
-        if let lat = value("--lat").flatMap({ Double($0) }), let lon = value("--lon").flatMap({ Double($0) }) {
-            model.overridePlace(Place(latitude: lat, longitude: lon, source: .manual))
+        guard args.contains("--render") || args.contains("--bench") else {
+            fail("Nothing to do: pass --render FILE.png or --bench N (or --help).")
         }
-        if let s = value("--seed").flatMap({ UInt64($0) }) { model.reseed(s) }
+        if args.contains("--render"), value("--render").map({ $0.hasPrefix("--") }) ?? true {
+            fail("--render needs a file name")
+        }
+        // Frames must not depend on what the installed app happens to have saved:
+        // the default landscape and the time zone's city, unless told otherwise.
+        let model = SceneModel.shared
+        if args.contains("--lat") || args.contains("--lon") {
+            guard let lat = value("--lat").flatMap({ Double($0) }), let lon = value("--lon").flatMap({ Double($0) }),
+                  abs(lat) <= 90, abs(lon) <= 180 else { fail("--lat and --lon must both be given, in degrees") }
+            model.overridePlace(Place(latitude: lat, longitude: lon, source: .manual))
+        } else {
+            model.overridePlace(Location.place(for: .autoupdatingCurrent))
+        }
+        if args.contains("--seed") {
+            guard let s = value("--seed").flatMap({ UInt64($0) }) else { fail("--seed must be a whole number") }
+            model.reseed(s)
+        } else {
+            model.reseed(SceneModel.defaultSeed)
+        }
         guard let renderer = Renderer.shared else {
             FileHandle.standardError.write(Data("\(Renderer.failure ?? "Metal is unavailable.")\n".utf8))
             exit(1)
@@ -46,9 +67,20 @@ enum Headless {
         renderer.terrainChanged()
 
         let dims = (value("--size") ?? "4112x2658").split(separator: "x").compactMap { Int($0) }
-        let width = dims.count == 2 ? dims[0] : 4112, height = dims.count == 2 ? dims[1] : 2658
-        let scale = CGFloat(Double(value("--scale") ?? "2") ?? 2)
-        let kind: SceneKind = value("--scene") == "nebula" ? .nebula : .horizon
+        guard dims.count == 2, dims[0] > 0, dims[1] > 0, dims[0] <= 16384, dims[1] <= 16384 else {
+            fail("--size must be WxH in pixels, for example 4112x2658")
+        }
+        let width = dims[0], height = dims[1]
+        guard let scaleValue = Double(value("--scale") ?? "2"), scaleValue > 0, scaleValue <= 4 else {
+            fail("--scale must be a number of pixels per point, such as 1 or 2")
+        }
+        let scale = CGFloat(scaleValue)
+        let kind: SceneKind
+        switch value("--scene") ?? "horizon" {
+        case "horizon": kind = .horizon
+        case "nebula": kind = .nebula
+        case let other: fail("Unknown scene: \(other) (try horizon or nebula)")
+        }
         let t0 = Double(value("--t") ?? "40") ?? 40
         let parallax = Float(value("--parallax") ?? "0") ?? 0
         model.cloudOverride = value("--cloud").flatMap { Float($0) }
@@ -58,10 +90,14 @@ enum Headless {
         if let s = value("--date") {
             let f = DateFormatter()
             f.dateFormat = "yyyy-MM-dd HH:mm"
-            date = f.date(from: s) ?? date
+            guard let parsed = f.date(from: s) else { fail("--date must look like \"2026-06-21 19:40\"") }
+            date = parsed
         } else if let h = value("--hour").flatMap({ Double($0) }) {
             date = Calendar.current.startOfDay(for: date).addingTimeInterval(h * 3600)
-        } else if let mode = value("--sky").flatMap({ SkyMode(rawValue: $0) }) {
+        } else if let name = value("--sky") {
+            guard let mode = SkyMode(rawValue: name), mode != .real, mode != .lapse else {
+                fail("--sky must be dawn, day, golden, dusk or night")
+            }
             model.skyMode = mode
             date = model.sceneDate()
         }

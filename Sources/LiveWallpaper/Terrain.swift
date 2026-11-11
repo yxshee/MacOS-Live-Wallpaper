@@ -10,8 +10,8 @@ struct Terrain {
     /// Texture periods per screen height. The nearest ridge repeats every four
     /// screen heights, wider than a 32:9 display, so no screen shows a seam.
     static let freq: [Float] = [0.25, 0.21, 0.18, 0.15, 0.13, 0.11]
-    private static let foot: [Float] = [0.085, 0.150, 0.215, 0.275, 0.330, 0.375]
-    private static let rise: [Float] = [0.060, 0.080, 0.100, 0.120, 0.140, 0.160]
+    static let foot: [Float] = [0.085, 0.150, 0.215, 0.275, 0.330, 0.375]
+    static let rise: [Float] = [0.060, 0.080, 0.100, 0.120, 0.140, 0.160]
     private static let cells = [18, 16, 14, 12, 12, 10]
     private static let ridged: [Float] = [0.0, 0.1, 0.35, 0.65, 0.9, 1.0]
 
@@ -110,7 +110,7 @@ struct Terrain {
     /// A spot on the third ridge that the two nearer ridges leave in view.
     private func placeCabin() -> (layer: Int, u: Float, y: Float)? {
         let layer = 2
-        for x: Float in [0.34, -0.42, 0.52, -0.20, 0.12, -0.60, 0.66] {
+        for x: Float in [0.12, -0.20, 0.34, -0.42, 0.52, -0.60, 0.66] {
             let y = height(layer, worldX: x) - 0.007
             var clear = true
             for near in 0..<layer {

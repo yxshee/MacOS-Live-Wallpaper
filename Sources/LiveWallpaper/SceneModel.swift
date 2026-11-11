@@ -252,11 +252,12 @@ final class SceneModel {
         // Clouds are lit by the sun, then by the moon. The hand-over is a blend,
         // deliberately not re-normalised: when the two pull opposite ways the
         // directional light fades out for a moment instead of whipping round.
+        // A body passing right over the reference point fades the light out too.
         func toward(_ source: V2) -> V2 {
             let v = source - V2(0, 0.65)
-            return simd_length(v) > 1e-4 ? simd_normalize(v) : V2(0, 1)
+            return v / max(simd_length(v), 0.15)
         }
-        let sunShare = smooth(-8, -4, e)
+        let sunShare = smooth(-10, -2, e)
         let light = toward(moonPos) * (1 - sunShare) + toward(sunPos) * sunShare
         let dayness = smooth(-4, 12, e)
         let lit = lerp(p.horizon, V3(1, 1, 1), 0.55 * dayness) + p.glow * (p.glowAmount * 0.30 * (1 - dayness))

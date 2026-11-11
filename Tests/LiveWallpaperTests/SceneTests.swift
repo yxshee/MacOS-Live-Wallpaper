@@ -4,7 +4,9 @@ import simd
 
 final class LayoutContractTests: XCTestCase {
     /// These structs are copied byte for byte into the shaders' uniform buffers.
-    func testUniformLayoutMatchesTheShaders() {
+    /// This checks sizes only: field order still has to be kept in step with
+    /// Shaders.metal by hand.
+    func testUniformSizesMatchTheShaders() {
         XCTAssertEqual(MemoryLayout<LayerUniforms>.stride, 48)
         XCTAssertEqual(MemoryLayout<Uniforms>.stride, 19 * 16 + Terrain.layers * 48)
         XCTAssertEqual(MemoryLayout<PassInfo>.stride, 16)
@@ -42,8 +44,10 @@ final class TerrainTests: XCTestCase {
             XCTAssertEqual(t.texels.count, Terrain.width * Terrain.layers * 2)
             for layer in 0..<Terrain.layers {
                 let heights = stride(from: 0, to: Terrain.width, by: 1).map { t.texels[(layer * Terrain.width + $0) * 2] }
-                XCTAssertGreaterThan(heights.min()!, 0)
-                XCTAssertLessThanOrEqual(heights.max()!, t.maxHeight[layer] + 1e-6)
+                // Ground runs from the layer's foot to foot + rise; trees add at most 0.052.
+                XCTAssertGreaterThanOrEqual(heights.min()!, Terrain.foot[layer] - 1e-5)
+                XCTAssertLessThanOrEqual(heights.max()!, Terrain.foot[layer] + Terrain.rise[layer] + 0.052 + 1e-5)
+                XCTAssertEqual(heights.max()!, t.maxHeight[layer], accuracy: 1e-6)
                 XCTAssertLessThan(t.maxHeight[layer], t.top)
             }
             // The sky layer starts below the lowest point of the farthest ridge.
@@ -88,11 +92,13 @@ final class SceneModelTests: XCTestCase {
     /// direction changes abruptly: at ordinary latitudes, in the far north
     /// (where twilight spans solar midnight) and in the south.
     func testNothingJumpsThroughTheDay() {
+        // Solstices, equinoxes and a full-moon night, so every hand-over is crossed.
+        for (y, mo, d) in [(2026, 3, 19), (2026, 6, 20), (2026, 9, 22), (2026, 12, 20), (2026, 11, 23)] {
         var c = DateComponents()
         c.timeZone = TimeZone(identifier: "UTC")
-        (c.year, c.month, c.day) = (2026, 6, 20)
+        (c.year, c.month, c.day) = (y, mo, d)
         let start = Calendar(identifier: .gregorian).date(from: c)!
-        for (lat, lon) in [(22.5, 88.4), (64.1, -21.9), (69.65, 18.96), (-33.9, 151.2), (0.0, 0.0)] {
+        for (lat, lon) in [(22.5, 88.4), (47.4, 8.5), (59.9, 10.7), (64.1, -21.9), (69.65, 18.96), (-33.9, 151.2), (0.0, 0.0)] {
             let m = model(lat, lon)
             var previous: Uniforms?
             for step in 0..<(2 * 2880) {
@@ -112,6 +118,7 @@ final class SceneModelTests: XCTestCase {
                 previous = u
             }
         }
+        }
     }
 
     func testSunCrossesTheSameWayInBothHemispheres() {
@@ -130,19 +137,42 @@ final class SceneModelTests: XCTestCase {
     }
 
     func testPinnedSkiesAlwaysResolveInsideTheDay() {
-        let zones = ["Europe/Oslo", "America/New_York", "Asia/Kolkata", "Australia/Sydney"]
-        // Midsummer, midwinter, and both clock-change days (a 23-hour and a 25-hour day).
-        let days = [(2026, 6, 21), (2026, 12, 21), (2026, 3, 8), (2026, 11, 1), (2026, 3, 29), (2026, 10, 25)]
-        for id in zones {
+        // Each place with its own time zone: Tromsø (polar day and night), New York,
+        // Kolkata (no clock changes) and Sydney (southern, clocks change the other way).
+        let places = [("Europe/Oslo", 69.65, 18.96), ("America/New_York", 40.7, -74.0),
+                      ("Asia/Kolkata", 22.53, 88.37), ("Australia/Sydney", -33.9, 151.2)]
+        // Midsummer, midwinter, and clock-change days (23-hour and 25-hour days).
+        let days = [(2026, 6, 21), (2026, 12, 21), (2026, 3, 8), (2026, 11, 1), (2026, 3, 29), (2026, 10, 25),
+                    (2026, 4, 5), (2026, 10, 4)]
+        for (id, lat, lon) in places {
             var cal = Calendar(identifier: .gregorian)
             cal.timeZone = TimeZone(identifier: id)!
-            for (lat, lon) in [(69.65, 18.96), (40.7, -74.0), (-33.9, 151.2)] {
+            do {
                 let m = model(lat, lon)
                 for (y, mo, d) in days {
                     let noon = cal.date(from: DateComponents(year: y, month: mo, day: d, hour: 12))!
                     let start = cal.startOfDay(for: noon)
                     let end = cal.date(byAdding: .day, value: 1, to: start)!
-                    for mode in [SkyMode.dawn, .day, .golden, .dusk, .night] {
+                    // The day as the model scans it: one elevation per minute.
+                    let minutes = Int(end.timeIntervalSince(start) / 60)
+                    let el = (0..<minutes).map {
+                        Astro.sky(at: start.addingTimeInterval(Double($0) * 60), latitude: lat, longitude: lon).sun.elevation
+                    }
+                    for (mode, target) in [(SkyMode.dawn, -4.0), (.golden, 9.0), (.dusk, -4.0)] {
+                        let t = m.moment(for: mode, on: noon, calendar: cal)
+                        let label = "\(mode) at \(lat) on \(y)-\(mo)-\(d) in \(id)"
+                        XCTAssertTrue(t >= start && t < end, "\(label) fell outside the day")
+                        let got = Astro.sky(at: t, latitude: lat, longitude: lon).sun.elevation
+                        if el.min()! < target && el.max()! > target {
+                            // The sun does pass this height today, so the moment must sit on it.
+                            XCTAssertEqual(got, target, accuracy: 0.6, label)
+                        } else {
+                            // It never does: the moment must be no worse than the day's closest approach.
+                            let nearest = el.map { abs($0 - target) }.min()!
+                            XCTAssertLessThanOrEqual(abs(got - target), nearest + 2, label)
+                        }
+                    }
+                    for mode in [SkyMode.day, .night] {
                         let t = m.moment(for: mode, on: noon, calendar: cal)
                         XCTAssertTrue(t >= start && t < end, "\(mode) at \(lat) on \(y)-\(mo)-\(d) in \(id) fell outside the day")
                     }
@@ -162,6 +192,7 @@ final class SceneModelTests: XCTestCase {
         XCTAssertEqual(elevation(.dawn), -4, accuracy: 0.5)
         XCTAssertEqual(elevation(.dusk), -4, accuracy: 0.5)
         XCTAssertEqual(elevation(.golden), 9, accuracy: 0.5)
+        XCTAssertEqual(elevation(.day), 38, accuracy: 0.5)       // the lower of 38° and three quarters of the noon height
         XCTAssertLessThan(elevation(.night), -40)
         XCTAssertLessThan(m.moment(for: .dawn, on: noon, calendar: cal), m.moment(for: .dusk, on: noon, calendar: cal))
     }

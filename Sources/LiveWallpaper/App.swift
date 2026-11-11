@@ -15,7 +15,7 @@ final class VideoView: NSView {
     private var watch: NSKeyValueObservation?
 
     /// `onFailure` runs on the main thread if the file turns out not to be playable.
-    init(frame: NSRect, url: URL, onFailure: @escaping (String) -> Void) {
+    init(frame: NSRect, url: URL, onFailure: @escaping (URL, String) -> Void) {
         super.init(frame: frame)
         let playerLayer = AVPlayerLayer(player: player)
         playerLayer.videoGravity = .resizeAspectFill
@@ -29,7 +29,7 @@ final class VideoView: NSView {
         watch = looper.observe(\.status, options: [.initial, .new]) { looper, _ in
             guard looper.status == .failed else { return }
             let reason = looper.error?.localizedDescription ?? "The file could not be played."
-            DispatchQueue.main.async { onFailure(reason) }
+            DispatchQueue.main.async { onFailure(url, reason) }
         }
     }
 
@@ -45,7 +45,7 @@ final class WallpaperWindow {
 
     /// Returns nil rather than a window with nothing to show: a bare window at
     /// this level would be a black rectangle over the user's real wallpaper.
-    init?(screen: NSScreen, choice: SceneChoice, videoURL: URL?, onVideoFailure: @escaping (String) -> Void) {
+    init?(screen: NSScreen, choice: SceneChoice, videoURL: URL?, onVideoFailure: @escaping (URL, String) -> Void) {
         let bounds = NSRect(origin: .zero, size: screen.frame.size)
         let content: NSView
         if choice == .video, let url = videoURL {
@@ -166,7 +166,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Screen notifications arrive in bursts (waking, docking); act once they settle.
     @objc private func screensChanged() {
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(rebuildIfNeeded), object: nil)
-        perform(#selector(rebuildIfNeeded), with: nil, afterDelay: 0.3)
+        // .common, so it also fires while a menu or alert is up.
+        perform(#selector(rebuildIfNeeded), with: nil, afterDelay: 0.3, inModes: [.common])
     }
 
     @objc private func rebuildIfNeeded() { rebuild() }
@@ -178,16 +179,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Replaces the windows only when the screens or the scene really changed.
     /// New windows go up before the old ones come down, so the desktop is never bare.
-    private func rebuild(force: Bool = false) {
+    private func rebuild() {
         let wanted = signature()
-        guard force || wanted != builtFor else { return }
+        guard wanted != builtFor else { return }
         builtFor = wanted
         let old = windows
         old.forEach { $0.retire() }
         let c = choice, url = videoURL
         windows = NSScreen.screens.compactMap { screen in
-            WallpaperWindow(screen: screen, choice: c, videoURL: url) { [weak self] reason in
-                self?.videoFailed(reason)
+            WallpaperWindow(screen: screen, choice: c, videoURL: url) { [weak self] failed, reason in
+                self?.videoFailed(failed, reason)
             }
         }
         old.forEach { $0.close() }
@@ -221,13 +222,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         redraw()
     }
 
-    private func videoFailed(_ reason: String) {
-        guard choice == .video else { return }
-        let name = videoURL?.lastPathComponent ?? "The video"
+    private func videoFailed(_ url: URL, _ reason: String) {
+        // Ignore a late report about a video that has already been replaced.
+        guard choice == .video, url == videoURL else { return }
         defaults.removeObject(forKey: "videoPath")
         choice = .horizon
         rebuild()
-        alert("\(name) can't be played", "\(reason)\n\nThe wallpaper has gone back to Horizon.")
+        alert("\(url.lastPathComponent) can't be played",
+              reason + (Renderer.shared == nil ? "\n\nThe wallpaper has been removed."
+                                               : "\n\nThe wallpaper has gone back to Horizon."))
     }
 
     private func alert(_ title: String, _ text: String) {
@@ -366,6 +369,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 alert("That isn't a place", "Latitude runs from -90 to 90 and longitude from -180 to 180, in decimal degrees.")
                 return
             }
+            // Pressing Return on the untouched time-zone city must not pin it as a manual place.
+            if place.source != .manual, String(format: "%.4f", la) == String(format: "%.4f", place.latitude),
+               String(format: "%.4f", lo) == String(format: "%.4f", place.longitude) { return }
             defaults.set(la, forKey: "latitude")
             defaults.set(lo, forKey: "longitude")
         case .alertSecondButtonReturn:

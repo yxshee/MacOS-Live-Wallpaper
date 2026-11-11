@@ -36,9 +36,8 @@ final class SceneView: NSView {
     private var softTime = -1.0
     private var builtFor: (saving: Bool, seed: UInt64) = (false, 0)
 
-    /// Frames a second asked for, and actually drawn (a running average).
+    /// Frames a second currently asked for.
     private(set) var fps: Float = 0
-    private(set) var deliveredFPS = 0.0
 
     private var frameCount = 0
     private var ridgeCount = 0
@@ -156,7 +155,9 @@ final class SceneView: NSView {
     private func renderFrame(now: CFTimeInterval) {
         guard let renderer = Renderer.shared, bounds.width > 0, bounds.height > 0 else { return }
         let cpuStart = SceneView.logStats ? clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID) : 0
-        let dt = playing ? min(now - last, 0.25) : 0
+        // Long gaps are clamped so a wake from sleep does not lurch the scene,
+        // but the clamp has to allow the gap a slow frame rate produces by design.
+        let dt = playing ? min(now - last, max(0.25, 2 / Double(max(fps, 1)))) : 0
         last = now
         elapsed += dt
 
@@ -252,10 +253,6 @@ final class SceneView: NSView {
         if let ridge { buffer.present(ridge) }
         buffer.commit()
 
-        if lastFrame > 0, now > lastFrame, !needsFrame {
-            let instant = 1 / (now - lastFrame)
-            deliveredFPS = deliveredFPS == 0 ? instant : deliveredFPS * 0.8 + instant * 0.2
-        }
         lastFrame = now
         needsFrame = false
 

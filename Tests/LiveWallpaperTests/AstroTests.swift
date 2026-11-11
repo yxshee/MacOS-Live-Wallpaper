@@ -79,11 +79,32 @@ final class LocationTests: XCTestCase {
         XCTAssertEqual(kolkata.source, .zoneCity("Asia/Kolkata"))
         XCTAssertEqual(kolkata.latitude, 22.53, accuracy: 0.05)
 
-        // The old name is not in the table; it must still land in India, not on the 30°N guess.
+        // The old name is not in the table; it must resolve to the city that replaced it.
         let calcutta = Location.place(for: TimeZone(identifier: "Asia/Calcutta")!)
-        XCTAssertNotEqual(calcutta.source, .offsetGuess)
-        XCTAssertEqual(calcutta.longitude, 88.37, accuracy: 15)
-        XCTAssertEqual(calcutta.latitude, 22.53, accuracy: 15)
+        XCTAssertEqual(calcutta.source, .zoneCity("Asia/Kolkata"))
+        XCTAssertEqual(calcutta.latitude, kolkata.latitude)
+    }
+
+    func testEveryZoneMacOSOffersHasACity() throws {
+        let table = Location.zoneTable()
+        try XCTSkipIf(table.isEmpty, "no zoneinfo table on this machine")
+        for id in TimeZone.knownTimeZoneIdentifiers where id != "GMT" {
+            let place = Location.place(for: TimeZone(identifier: id)!)
+            XCTAssertNotEqual(place.source, .offsetGuess, "\(id) fell back to a guess")
+        }
+        // Every successor named in the legacy list must exist, or the list is stale.
+        for (old, new) in Location.legacyNames where TimeZone(identifier: old) != nil {
+            XCTAssertNotNil(table[new], "\(old) points at \(new), which the table does not have")
+        }
+    }
+
+    func testAliasWithSharedRulesPicksAnInhabitedPlace() throws {
+        try XCTSkipIf(Location.zoneTable().isEmpty, "no zoneinfo table on this machine")
+        // "NZ" shares its rule file with Pacific/Auckland and Antarctica/McMurdo.
+        guard let nz = TimeZone(identifier: "NZ") else { throw XCTSkip("no NZ alias here") }
+        let place = Location.place(for: nz)
+        XCTAssertGreaterThan(place.latitude, -50, "resolved to Antarctica")
+        XCTAssertLessThan(place.latitude, -30)
     }
 
     func testFallbackUsesStandardOffset() {

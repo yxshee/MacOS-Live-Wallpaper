@@ -13,6 +13,8 @@ swift test                    # unit tests: astronomy, location, palette, terrai
 ./scripts/build-app.sh --universal # one binary for Apple Silicon and Intel (needs full Xcode)
 ```
 
+On recent SDKs `--universal` prints a warning that x86_64 is deprecated; the build still succeeds.
+
 `swift build` alone gives you the bare executable, but the app needs to run from the `.app` bundle: that is where it finds `Shaders.metal`.
 
 ## See your change without touching your desktop
@@ -30,7 +32,7 @@ $APP --bench 400 --hour 1.5 --aurora 1      # GPU milliseconds per frame
 $APP --help                                 # every option
 ```
 
-`--date` and `--hour` are in your Mac's own time zone.
+`--date` and `--hour` are in your Mac's own time zone. Frames use the default landscape and your time zone's city, whatever the installed app has saved; pass `--seed`, `--lat` and `--lon` to change them. A flag the binary does not know is an error: it never falls through to starting the wallpaper.
 
 Please attach a rendered frame to any pull request that changes how something looks.
 
@@ -53,6 +55,10 @@ Two environment variables help when testing the real app. Start the binary from 
 | `SceneView.swift` | The two layers on screen, the display link and the frame-rate policy. |
 | `App.swift` | Windows, the menu, settings. |
 | `Headless.swift` | `--render` and `--bench`. |
+| `Conditions.swift` | Battery, Low Power Mode, heat, and whether Finder (the desktop) is in front. |
+| `NoiseBake.swift` | The noise texture baked at launch. |
+| `Math.swift` | Small vector and easing helpers. |
+| `main.swift` | Entry point: any `--flag` draws off screen, otherwise the menu-bar app starts. |
 | `Resources/Shaders.metal` | All the drawing. |
 
 A frame is three passes: a soft sky at a quarter of the sky's resolution, the sky layer at one pixel per point (the soft sky plus stars, sun and moon), and a Retina ridge layer drawn only when it would look different.
@@ -61,7 +67,7 @@ A frame is three passes: a soft sky at a quarter of the sky's resolution, the sk
 
 - **Shaders are compiled when the app starts, not when you build.** A mistake in `Shaders.metal` shows up only at run time. Run `--render` after every shader edit; it prints the compiler's error.
 - **Fragment inputs need `[[stage_in]]`.**
-- **`Uniforms` is copied into the shader byte for byte.** If you add a field, add it in both places, in the same position. `swift test` checks the total size.
+- **`Uniforms` is copied into the shader byte for byte.** If you add a field, add it in both places, in the same position. `swift test` checks the total size, not the order.
 - **Anything that animates must survive weeks of uptime.** Time reaches the shaders as values wrapped to a period (`wrap(elapsed * speed, 1)`), never as raw seconds. If a shader multiplies a wrapped value, the multiplier must be a whole number or the picture pops at the wrap.
 - **Nothing may jump.** Colours and light directions have to change smoothly across noon, midnight, dawn, dusk and the equator. `SceneModelTests.testNothingJumpsThroughTheDay` walks two days at several latitudes and fails on a step.
 - **Measure GPU cost under sustained load.** Timing one frame at a time measures how slowly the GPU's clock is idling, not the work. `--bench` queues frames back to back for this reason.
