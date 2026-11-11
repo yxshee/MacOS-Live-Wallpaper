@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Unit tests
+        run: swift test
+      - name: Build the app bundle
+        run: ./scripts/build-app.sh
+      - name: Check the bundle
+        run: |
+          test -x build/LiveWallpaper.app/Contents/MacOS/LiveWallpaper
+          test -f build/LiveWallpaper.app/Contents/Resources/Shaders.metal
+          codesign --verify --deep --strict build/LiveWallpaper.app
+          plutil -lint build/LiveWallpaper.app/Contents/Info.plist
