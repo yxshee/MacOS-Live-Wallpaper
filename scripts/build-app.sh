@@ -6,21 +6,25 @@ cd "$(dirname "$0")/.."
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/build-app.sh [--universal] [--install]
+Usage: scripts/build-app.sh [--universal] [--install] [--permissive-only]
 
   (no options)   build ./build/LiveWallpaper.app for this Mac
   --universal    one binary for Apple Silicon and Intel (needs full Xcode)
   --install      also copy the app to ~/Applications and start it,
                  replacing a copy that is already running
+  --permissive-only   leave out scenes under non-commercial licences
+                 (see Scenes/NONCOMMERCIAL.md); for commercial reuse
 USAGE
 }
 
 UNIVERSAL=0
 INSTALL=0
+PERMISSIVE=0
 for arg in "$@"; do
   case "$arg" in
     --universal) UNIVERSAL=1 ;;
     --install) INSTALL=1 ;;
+    --permissive-only) PERMISSIVE=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $arg" >&2; usage >&2; exit 2 ;;
   esac
@@ -39,7 +43,17 @@ cp "$BIN" "$APP/Contents/MacOS/LiveWallpaper"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 # The shaders ship as source and are compiled once at launch, so building
 # needs only the Swift compiler, not Xcode's separate Metal toolchain.
-cp Resources/Shaders.metal "$APP/Contents/Resources/"
+cp Resources/Shaders.metal Resources/ScenePrelude.metal "$APP/Contents/Resources/"
+
+# The scene library. Each scene keeps its own licence file beside its shader.
+mkdir -p "$APP/Contents/Resources/Scenes"
+for scene in Scenes/*/; do
+  [ -f "$scene/scene.json" ] || continue
+  if [ "$PERMISSIVE" = 1 ] && grep -Eq '"licence"[[:space:]]*:[[:space:]]*"[^"]*-NC' "$scene/scene.json"; then
+    continue
+  fi
+  cp -R "${scene%/}" "$APP/Contents/Resources/Scenes/"
+done
 
 # Stamp the version from git when there is one: v1.2.3 tags set the version,
 # the commit count is the build number.

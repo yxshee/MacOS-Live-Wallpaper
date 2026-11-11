@@ -3,9 +3,8 @@ import AVFoundation
 import ServiceManagement
 import UniformTypeIdentifiers
 
-enum SceneChoice: String {
-    case horizon, nebula, video
-}
+/// The id saved when the wallpaper is the user's own video file rather than a scene.
+let videoSceneID = "video"
 
 // MARK: - Video wallpaper
 
@@ -40,22 +39,35 @@ final class VideoView: NSView {
 
 final class WallpaperWindow {
     let window: NSWindow
-    private(set) var scene: SceneView?
+    private(set) var scene: SceneHost?
     private var video: VideoView?
 
     /// Returns nil rather than a window with nothing to show: a bare window at
     /// this level would be a black rectangle over the user's real wallpaper.
-    init?(screen: NSScreen, choice: SceneChoice, videoURL: URL?, onVideoFailure: @escaping (URL, String) -> Void) {
+    init?(screen: NSScreen, sceneID: String, videoURL: URL?,
+          onVideoFailure: @escaping (URL, String) -> Void, onSceneFailure: @escaping (String, String) -> Void,
+          onFirstFrame: @escaping (String) -> Void) {
         let bounds = NSRect(origin: .zero, size: screen.frame.size)
         let content: NSView
-        if choice == .video, let url = videoURL {
+        if sceneID == videoSceneID, let url = videoURL {
             let v = VideoView(frame: bounds, url: url, onFailure: onVideoFailure)
             video = v
             content = v
         } else if Renderer.shared != nil {
-            let s = SceneView(frame: bounds, kind: choice == .nebula ? .nebula : .horizon)
-            scene = s
-            content = s
+            let descriptor = SceneRegistry.shared.scene(sceneID) ?? SceneRegistry.builtins[0]
+            switch descriptor.source {
+            case .builtin(let kind):
+                let s = SceneView(frame: bounds, kind: kind)
+                scene = s
+                content = s
+            case .shader:
+                guard let shader = ShaderScene(descriptor) else { return nil }
+                let s = ShaderSceneView(frame: bounds, scene: shader)
+                s.onFailure = { reason in onSceneFailure(descriptor.id, reason) }
+                s.onFirstFrame = { onFirstFrame(descriptor.id) }
+                scene = s
+                content = s
+            }
         } else {
             return nil
         }
@@ -109,19 +121,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
               FileManager.default.isReadableFile(atPath: path) else { return nil }
         return URL(fileURLWithPath: path)
     }
-    private var choice: SceneChoice {
+    /// The chosen scene's id: a registry id, or `videoSceneID`. Anything that
+    /// can no longer be shown (a deleted scene, a missing video) falls back to Horizon.
+    private var choice: String {
         get {
-            let saved = defaults.string(forKey: "scene").flatMap { SceneChoice(rawValue: $0) } ?? .horizon
-            return saved == .video && videoURL == nil ? .horizon : saved
+            let saved = defaults.string(forKey: "scene") ?? "horizon"
+            if saved == videoSceneID { return videoURL == nil ? "horizon" : saved }
+            return SceneRegistry.shared.scene(saved) != nil ? saved : "horizon"
         }
-        set { defaults.set(newValue.rawValue, forKey: "scene") }
+        set { defaults.set(newValue, forKey: "scene") }
     }
     private var userPaused: Bool {
         get { defaults.bool(forKey: "paused") }
         set { defaults.set(newValue, forKey: "paused") }
     }
     /// The generated scenes need Metal; the video scene does not.
-    private var cannotDraw: Bool { choice != .video && Renderer.shared == nil }
+    private var cannotDraw: Bool { choice != videoSceneID && Renderer.shared == nil }
 
     func applicationDidFinishLaunching(_ note: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -149,7 +164,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                        name: NSWorkspace.sessionDidBecomeActiveNotification, object: nil)
         Conditions.shared.onChange = { [weak self] in self?.updatePlayback() }
 
+        var abandoned: String?
+        if let stuck = defaults.string(forKey: "sceneOnTrial") {
+            defaults.removeObject(forKey: "sceneOnTrial")
+            if defaults.string(forKey: "scene") == stuck {
+                abandoned = SceneRegistry.shared.scene(stuck)?.title ?? stuck
+                choice = "horizon"
+            }
+        }
         rebuild()
+        if let abandoned {
+            alert("\(abandoned) did not finish drawing last time",
+                  "The wallpaper has gone back to Horizon. You can choose \(abandoned) again from the menu to retry.")
+        }
         if cannotDraw {
             alert("Live Wallpaper can't draw on this Mac",
                   (Renderer.failure ?? "Metal is unavailable.")
@@ -174,7 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func signature() -> String {
         let screens = NSScreen.screens.map { "\($0.frame)@\($0.backingScaleFactor)" }.joined(separator: "|")
-        return "\(choice.rawValue)|\(videoURL?.path ?? "")|\(screens)"
+        return "\(choice)|\(videoURL?.path ?? "")|\(screens)"
     }
 
     /// Replaces the windows only when the screens or the scene really changed.
@@ -186,10 +213,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let old = windows
         old.forEach { $0.retire() }
         let c = choice, url = videoURL
+        // A shader scene is on trial from here until the GPU has drawn one frame of it.
+        if case .shader? = SceneRegistry.shared.scene(c)?.source { defaults.set(c, forKey: "sceneOnTrial") }
+        else { defaults.removeObject(forKey: "sceneOnTrial") }
         windows = NSScreen.screens.compactMap { screen in
-            WallpaperWindow(screen: screen, choice: c, videoURL: url) { [weak self] failed, reason in
-                self?.videoFailed(failed, reason)
-            }
+            WallpaperWindow(screen: screen, sceneID: c, videoURL: url,
+                            onVideoFailure: { [weak self] failed, reason in self?.videoFailed(failed, reason) },
+                            onSceneFailure: { [weak self] id, reason in self?.sceneFailed(id, reason) },
+                            onFirstFrame: { [weak self] id in self?.sceneDrew(id) })
         }
         old.forEach { $0.close() }
         updatePlayback()
@@ -224,13 +255,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func videoFailed(_ url: URL, _ reason: String) {
         // Ignore a late report about a video that has already been replaced.
-        guard choice == .video, url == videoURL else { return }
+        guard choice == videoSceneID, url == videoURL else { return }
         defaults.removeObject(forKey: "videoPath")
-        choice = .horizon
+        choice = "horizon"
         rebuild()
         alert("\(url.lastPathComponent) can't be played",
               reason + (Renderer.shared == nil ? "\n\nThe wallpaper has been removed."
                                                : "\n\nThe wallpaper has gone back to Horizon."))
+    }
+
+    /// A shader scene is "on trial" from the moment it is set up until the GPU
+    /// has really drawn one frame of it. If the app dies in between, the next
+    /// launch finds the mark and goes back to Horizon instead of trying again
+    /// (which matters for a login item: a scene that hangs must not hang every login).
+    private func sceneDrew(_ id: String) {
+        if defaults.string(forKey: "sceneOnTrial") == id { defaults.removeObject(forKey: "sceneOnTrial") }
+    }
+
+    private func sceneFailed(_ id: String, _ reason: String) {
+        guard choice == id else { return }
+        let title = SceneRegistry.shared.scene(id)?.title ?? id
+        defaults.removeObject(forKey: "sceneOnTrial")
+        choice = "horizon"
+        rebuild()
+        alert("\(title) can't be shown", "\(reason)\n\nThe wallpaper has gone back to Horizon.")
     }
 
     private func alert(_ title: String, _ text: String) {
@@ -254,15 +302,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         let generated = Renderer.shared != nil
-        let horizon = add(menu, "Horizon", #selector(chooseScene(_:)), SceneChoice.horizon.rawValue)
-        horizon.state = current == .horizon && generated ? .on : .off
-        let nebula = add(menu, "Nebula", #selector(chooseScene(_:)), SceneChoice.nebula.rawValue)
-        nebula.state = current == .nebula && generated ? .on : .off
-        if !generated { horizon.action = nil; nebula.action = nil }
-        add(menu, current == .video ? "Video: \(videoURL?.lastPathComponent ?? "")" : "Video…",
-            #selector(chooseVideo)).state = current == .video ? .on : .off
+        let registry = SceneRegistry.shared
+        for builtin in SceneRegistry.builtins {
+            let item = add(menu, builtin.title, #selector(chooseScene(_:)), builtin.id)
+            item.state = current == builtin.id && generated ? .on : .off
+            if !generated { item.action = nil }
+        }
+        // The imported library, grouped by style. Each scene shows who made it.
+        if generated {
+            for style in SceneDescriptor.Style.allCases {
+                let scenes = registry.scenes(in: style)
+                guard !scenes.isEmpty else { continue }
+                let group = NSMenuItem(title: style.title, action: nil, keyEquivalent: "")
+                let sub = NSMenu()
+                for scene in scenes {
+                    let item = add(sub, scene.title, #selector(chooseScene(_:)), scene.id)
+                    item.state = current == scene.id ? .on : .off
+                    item.toolTip = "\(scene.credit). Licence: \(scene.licence)"
+                        + (scene.isNonCommercial ? " (non-commercial use only)" : "")
+                }
+                group.submenu = sub
+                if scenes.contains(where: { $0.id == current }) { group.state = .mixed }
+                menu.addItem(group)
+            }
+        }
+        add(menu, current == videoSceneID ? "Video: \(videoURL?.lastPathComponent ?? "")" : "Video…",
+            #selector(chooseVideo)).state = current == videoSceneID ? .on : .off
+        if let scene = registry.scene(current), !SceneRegistry.reserved.contains(current) {
+            menu.addItem(.separator())
+            let credit = NSMenuItem(title: scene.credit, action: nil, keyEquivalent: "")
+            credit.isEnabled = false
+            menu.addItem(credit)
+            let licence = NSMenuItem(title: "Licence: \(scene.licence)" + (scene.isNonCommercial ? ", non-commercial" : ""),
+                                     action: nil, keyEquivalent: "")
+            licence.isEnabled = false
+            menu.addItem(licence)
+            if !scene.sourceURL.isEmpty { add(menu, "Open the Original…", #selector(openSource(_:)), scene.sourceURL) }
+        }
 
-        if current == .horizon && generated {
+        if current == "horizon" && generated {
             menu.addItem(.separator())
             let sky = NSMenuItem(title: "Sky", action: nil, keyEquivalent: "")
             let sub = NSMenu()
@@ -292,10 +370,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         add(menu, "Quit Live Wallpaper", #selector(quit))
     }
 
-    private func statusLine(_ current: SceneChoice) -> String {
+    private func statusLine(_ current: String) -> String {
         if cannotDraw { return "Can't draw on this Mac" }
         if userPaused { return "Paused" }
-        if current == .video { return Conditions.shared.saving ? "Video paused to save power" : "Playing a video" }
+        if current == videoSceneID { return Conditions.shared.saving ? "Video paused to save power" : "Playing a video" }
         guard let scene = windows.first(where: { $0.scene?.playing == true })?.scene else {
             return "Resting while the desktop is covered"
         }
@@ -314,9 +392,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func chooseScene(_ sender: NSMenuItem) {
-        guard let c = (sender.representedObject as? String).flatMap({ SceneChoice(rawValue: $0) }) else { return }
-        choice = c
+        guard let id = sender.representedObject as? String, SceneRegistry.shared.scene(id) != nil else { return }
+        choice = id
         rebuild()
+    }
+
+    @objc private func openSource(_ sender: NSMenuItem) {
+        guard let text = sender.representedObject as? String, let url = URL(string: text),
+              url.scheme == "https" else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func chooseVideo() {
@@ -327,7 +411,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
         defaults.set(url.path, forKey: "videoPath")
-        choice = .video
+        choice = videoSceneID
         rebuild()       // an unplayable file reports back through videoFailed and is forgotten
     }
 

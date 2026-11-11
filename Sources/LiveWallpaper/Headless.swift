@@ -20,7 +20,7 @@ enum Headless {
             FileHandle.standardError.write(Data((message + "\n").utf8))
             exit(2)
         }
-        let known: Set<String> = ["--help", "--render", "--bench", "--size", "--scale", "--date", "--hour", "--sky", "--scene",
+        let known: Set<String> = ["--help", "--render", "--bench", "--scene-dir", "--check-scenes", "--list-scenes", "--previews", "--size", "--scale", "--date", "--hour", "--sky", "--scene",
                                   "--seed", "--t", "--cloud", "--aurora", "--meteor", "--parallax", "--lat", "--lon"]
         let unknown = args.dropFirst().filter { $0.hasPrefix("--") && !known.contains($0) }
         if !unknown.isEmpty || args.contains("--help") {
@@ -31,12 +31,27 @@ enum Headless {
               --size WxH  --scale S    output pixels and pixels per point (default 4112x2658, 2)
               --hour H | --date "yyyy-MM-dd HH:mm" | --sky dawn|day|golden|dusk|night
               --lat DEG --lon DEG      place on Earth (default: from the time zone)
-              --scene horizon|nebula   --seed N   --t SECONDS   --cloud 0..1   --aurora 0..1
-              --meteor 0..1            --parallax -0.5..0.5
+              --scene ID               any scene in the library (see --list-scenes); default horizon
+              --scene-dir FOLDER       a scene folder that is not installed (for work in progress)
+              --seed N   --t SECONDS   --cloud 0..1   --aurora 0..1   --meteor 0..1   --parallax -0.5..0.5
+              --list-scenes            every scene with its author and licence
+              --check-scenes [--previews DIR]   compile, draw and time every shader scene
             """
             if !unknown.isEmpty { FileHandle.standardError.write(Data("Unknown option: \(unknown.joined(separator: " "))\n".utf8)) }
             print(usage)
             exit(unknown.isEmpty ? 0 : 2)
+        }
+        if args.contains("--list-scenes") {
+            for s in SceneRegistry.shared.scenes {
+                print("\(s.id)\t\(s.style.rawValue)\t\(s.licence)\t\(s.credit)")
+            }
+            for p in SceneRegistry.shared.problems { FileHandle.standardError.write(Data((p + "\n").utf8)) }
+            exit(0)
+        }
+        if args.contains("--check-scenes") {
+            guard let renderer = Renderer.shared else { fail(Renderer.failure ?? "Metal is unavailable.") }
+            HeadlessShader.checkAll(renderer: renderer, registry: SceneRegistry.shared, previews: value("--previews"),
+                                    place: Location.place(for: .autoupdatingCurrent))
         }
         guard args.contains("--render") || args.contains("--bench") else {
             fail("Nothing to do: pass --render FILE.png or --bench N (or --help).")
@@ -75,11 +90,17 @@ enum Headless {
             fail("--scale must be a number of pixels per point, such as 1 or 2")
         }
         let scale = CGFloat(scaleValue)
-        let kind: SceneKind
-        switch value("--scene") ?? "horizon" {
-        case "horizon": kind = .horizon
-        case "nebula": kind = .nebula
-        case let other: fail("Unknown scene: \(other) (try horizon or nebula)")
+        var kind = SceneKind.horizon
+        var shader: SceneDescriptor?
+        if let dir = value("--scene-dir") {
+            switch SceneRegistry.load(URL(fileURLWithPath: dir).standardizedFileURL) {
+            case .success(let d): shader = d
+            case .failure(let problem): fail("\(dir): \(problem.message)")
+            }
+        } else {
+            let id = value("--scene") ?? "horizon"
+            guard let d = SceneRegistry.shared.scene(id) else { fail("Unknown scene: \(id) (see --list-scenes)") }
+            if case .builtin(let k) = d.source { kind = k } else { shader = d }
         }
         let t0 = Double(value("--t") ?? "40") ?? 40
         let parallax = Float(value("--parallax") ?? "0") ?? 0
@@ -102,6 +123,12 @@ enum Headless {
             date = model.sceneDate()
         }
 
+        let frames = max(1, Int(value("--bench") ?? "1") ?? 1)
+        if let shader {
+            HeadlessShader.run(shader, renderer: renderer, width: width, height: height, scale: scale,
+                               elapsed: t0, date: date, frames: frames, path: value("--render"), place: model.place)
+        }
+
         // The same geometry the view uses.
         let points = CGSize(width: CGFloat(width) / scale, height: CGFloat(height) / scale)
         let layout = SceneLayout(size: points, kind: kind, terrain: model.terrain)
@@ -117,20 +144,6 @@ enum Headless {
             d.usage = [.renderTarget, .shaderRead]
             d.storageMode = .private
             return renderer.device.makeTexture(descriptor: d)
-        }
-        // Read back through a blit into a CPU-visible buffer, which works the
-        // same on unified-memory and discrete GPUs.
-        func pixels(of texture: MTLTexture) -> [UInt8]? {
-            let rowBytes = texture.width * 4, length = rowBytes * texture.height
-            guard let store = renderer.device.makeBuffer(length: length, options: .storageModeShared),
-                  let buffer = renderer.makeBuffer(), let blit = buffer.makeBlitCommandEncoder() else { return nil }
-            blit.copy(from: texture, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
-                      sourceSize: MTLSize(width: texture.width, height: texture.height, depth: 1),
-                      to: store, destinationOffset: 0, destinationBytesPerRow: rowBytes, destinationBytesPerImage: length)
-            blit.endEncoding()
-            buffer.commit()
-            buffer.waitUntilCompleted()
-            return [UInt8](UnsafeBufferPointer(start: store.contents().assumingMemoryBound(to: UInt8.self), count: length))
         }
         guard let skyTarget = target(skySize), let soft = renderer.makeSoftTarget(pointSize: skySize)
         else { fatalError("could not create render targets") }
@@ -164,7 +177,6 @@ enum Headless {
             return (lastBuffer.gpuEndTime - warm.gpuStartTime) * 1000 / Double(buffers.count - buffers.count / 4)
         }
 
-        let frames = max(1, Int(value("--bench") ?? "1") ?? 1)
         let skyMs = timed(frames) { renderer.encodeSky($0, target: skyTarget, soft: soft, uniforms: &$1, kind: kind, pass: skyPass) }
         var ridgeMs = 0.0
         if let ridgeTarget {
@@ -179,7 +191,7 @@ enum Headless {
             // Put the two layers together the way the window server does:
             // the sky scaled up to the screen's pixels, the ridges laid over it.
             func image(_ texture: MTLTexture, alpha: CGImageAlphaInfo) -> CGImage? {
-                guard let bytes = pixels(of: texture),
+                guard let bytes = Snapshot.pixels(of: texture, renderer: renderer),
                       let provider = CGDataProvider(data: Data(bytes) as CFData) else { return nil }
                 return CGImage(width: texture.width, height: texture.height, bitsPerComponent: 8, bitsPerPixel: 32,
                                bytesPerRow: texture.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,

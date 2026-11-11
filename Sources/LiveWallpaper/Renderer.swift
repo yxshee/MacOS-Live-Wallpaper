@@ -36,6 +36,7 @@ final class Renderer {
     let device: MTLDevice
     private let queue: MTLCommandQueue
     private let skyPipeline, nebulaPipeline, starsPipeline, plainPipeline, ridgePipeline: MTLRenderPipelineState
+    private let presentPipeline: MTLRenderPipelineState
     private let noise: MTLTexture
     private var ridges: MTLTexture
     private let descriptor = MTLRenderPassDescriptor()
@@ -63,6 +64,7 @@ final class Renderer {
             starsPipeline = try pipeline("starsFragment", .bgra8Unorm)
             plainPipeline = try pipeline("plainFragment", .bgra8Unorm)
             ridgePipeline = try pipeline("ridgeFragment", .bgra8Unorm)
+            presentPipeline = try pipeline("presentFragment", .bgra8Unorm)
         } catch {
             NSLog("LiveWallpaper: shader setup failed: \(error)")
             Renderer.failure = "The shaders could not be compiled: \(error.localizedDescription)"
@@ -123,6 +125,35 @@ final class Renderer {
     }
 
     func makeBuffer() -> MTLCommandBuffer? { queue.makeCommandBuffer() }
+
+    /// An off-screen target a shader scene draws into.
+    func makeTarget(width: Int, height: Int, format: MTLPixelFormat) -> MTLTexture? {
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: format, width: max(1, width),
+                                                         height: max(1, height), mipmapped: false)
+        d.usage = [.renderTarget, .shaderRead]
+        d.storageMode = .private
+        return device.makeTexture(descriptor: d)
+    }
+
+    /// Stands in for any texture slot a shader scene leaves empty; sampling an unbound slot is undefined.
+    private(set) lazy var blackTexture: MTLTexture = {
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: 1, height: 1, mipmapped: false)
+        let texture = device.makeTexture(descriptor: d)!
+        var pixel: [UInt8] = [0, 0, 0, 255]
+        texture.replace(region: MTLRegionMake2D(0, 0, 1, 1), mipmapLevel: 0, withBytes: &pixel, bytesPerRow: 4)
+        return texture
+    }()
+
+    /// Scales a shader scene's off-screen picture onto the screen, with dither.
+    func encodePresent(_ buffer: MTLCommandBuffer, source: MTLTexture, target: MTLTexture) {
+        descriptor.colorAttachments[0].texture = target
+        defer { descriptor.colorAttachments[0].texture = nil }
+        guard let enc = buffer.makeRenderCommandEncoder(descriptor: descriptor) else { return }
+        enc.setRenderPipelineState(presentPipeline)
+        enc.setFragmentTexture(source, index: 0)
+        enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        enc.endEncoding()
+    }
 
     /// The small off-screen target for the soft sky: half the sky layer's points each way.
     func makeSoftTarget(pointSize: CGSize) -> MTLTexture? {

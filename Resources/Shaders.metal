@@ -343,3 +343,10 @@ fragment float4 ridgeFragment(VOut in [[stage_in]],
 
     return float4(c, alpha);
 }
+
+// MARK: Shader scenes: scale the off-screen picture onto the screen
+
+fragment float4 presentFragment(VOut in [[stage_in]], texture2d<float> source [[texture(0)]]) {
+    float3 c = source.sample(edge, float2(in.uv.x, 1.0 - in.uv.y)).rgb;
+    return float4(saturate(c) + dither(in.pos.xy), 1.0);
+}

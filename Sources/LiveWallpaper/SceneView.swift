@@ -183,23 +183,20 @@ final class SceneView: NSView {
                                                   aspect: aspect, parallax: parallax))
         if horizon { updateMeteor(&u, stars: info.stars, aspect: aspect, saving: conditions.saving) }
 
-        let want: Float
-        if conditions.saving {
-            want = horizon && info.skyIsStill ? 1 : 5
-        } else if meteor != nil {
-            want = conditions.onBattery || !conditions.desktopInFront ? 30 : 60
+        let hint: FramePolicy.Hint
+        if meteor != nil {
+            hint = .burst
         } else if moving || lapse {
-            want = 30
+            hint = .moving
         } else if horizon, info.skyIsStill {
             // Only the sun is moving. Stay responsive to the pointer if it can move the ridges.
-            want = conditions.desktopInFront && model.parallax ? 10 : 1
+            hint = conditions.desktopInFront && model.parallax && !conditions.saving ? .slow : .still
         } else if horizon, info.stars <= 0.003 {
-            want = conditions.onBattery && !conditions.desktopInFront ? 6 : 10     // clouds repaint at most ten times a second
-        } else if conditions.desktopInFront {
-            want = conditions.onBattery ? 15 : 20
+            hint = .slow            // clouds repaint at most ten times a second
         } else {
-            want = conditions.onBattery ? 6 : 10
+            hint = .lively
         }
+        let want = FramePolicy.rate(conditions.framePolicy, hint: hint)
         if want != fps {
             fps = want
             link?.preferredFrameRateRange = CAFrameRateRange(minimum: want, maximum: want, preferred: want)
