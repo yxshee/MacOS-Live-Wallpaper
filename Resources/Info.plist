@@ -29,7 +29,7 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Released under the MIT License.</string>
+    <string>The app is released under the MIT License. Each scene carries its author's own licence.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>

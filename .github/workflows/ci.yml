@@ -35,7 +35,14 @@ jobs:
           test -x build/LiveWallpaper.app/Contents/MacOS/LiveWallpaper
           test -f build/LiveWallpaper.app/Contents/Resources/Shaders.metal
           test -f build/LiveWallpaper.app/Contents/Resources/ScenePrelude.metal
-          test -d build/LiveWallpaper.app/Contents/Resources/Scenes
+          test -f build/LiveWallpaper.app/Contents/Resources/LICENSE
+          # Every scene in the repository reached the bundle, whole.
+          for scene in Scenes/*/; do
+            id="$(basename "$scene")"
+            for file in scene.json LICENSE main.metal; do
+              test -f "build/LiveWallpaper.app/Contents/Resources/Scenes/$id/$file" || { echo "missing $id/$file"; exit 1; }
+            done
+          done
           codesign --verify --deep --strict build/LiveWallpaper.app
           plutil -lint build/LiveWallpaper.app/Contents/Info.plist
       - name: Notices match the scene manifests

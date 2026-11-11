@@ -9,4 +9,4 @@ labels: compatibility
 - Displays (built-in, external, resolution, refresh rate):
 - Does it draw correctly?
 - Anything odd with desktop icons, widgets, Stage Manager or Mission Control?
-- Output of `LW_STATS=1 ~/Applications/LiveWallpaper.app/Contents/MacOS/LiveWallpaper` for about ten seconds, if you can (quit the running copy first):
+- Output of `LW_STATS=1 ~/Applications/LiveWallpaper.app/Contents/MacOS/LiveWallpaper` for about a minute, if you can (quit the running copy first):

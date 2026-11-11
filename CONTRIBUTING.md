@@ -32,13 +32,13 @@ $APP --bench 400 --hour 1.5 --aurora 1      # GPU milliseconds per frame
 $APP --help                                 # every option
 ```
 
-`--date` and `--hour` are in your Mac's own time zone. Frames use the default landscape and your time zone's city, whatever the installed app has saved; pass `--seed`, `--lat` and `--lon` to change them. A flag the binary does not know is an error: it never falls through to starting the wallpaper.
+`--date` and `--hour` are in your Mac's own time zone. Frames use the default landscape and your time zone's city, whatever the installed app has saved; pass `--seed`, `--lat` and `--lon` to change them. An option beginning with `--` that the binary does not know is an error and never falls through to starting the wallpaper. Anything else does start it, a single-dash `-h` included, so always type the two dashes.
 
 Please attach a rendered frame to any pull request that changes how something looks.
 
 Two environment variables help when testing the real app. Start the binary from a terminal with them set:
 
-- `LW_STATS=1` prints the frame rate asked for and delivered, and CPU and GPU time per frame.
+- `LW_STATS=1` prints a line every 40 frames: for Horizon the frame rate asked for and delivered and the CPU and GPU time per frame, for a shader scene the frame rate asked for, the GPU time and the size it is drawn at. A still daytime Horizon draws one frame a second, so give it a minute.
 - `LW_ALWAYS_PLAY=1` keeps drawing while the desktop is covered, so you can capture the window.
 
 ## How the code is laid out
@@ -74,14 +74,16 @@ A scene is a folder with a shader, a manifest and a licence file; nothing in the
 
 ```bash
 python3 scripts/update-notices.py     # regenerate the credits
-./scripts/check-scenes.sh             # compile, draw and cost every scene; refresh previews
+./scripts/check-scenes.sh             # rebuild, then compile, draw and cost every scene
 ```
+
+The check writes a `preview.jpg` for a scene that has none. After changing how an existing scene looks, run it with `--previews` to redraw them, and commit only the previews of the scenes you changed.
 
 Only bring in work whose author's licence allows it to be redistributed, and say where that licence is stated.
 
 ## Things that will catch you out
 
-- **Shaders are compiled when the app starts, not when you build.** A mistake in `Shaders.metal` shows up only at run time. Run `--render` after every shader edit; it prints the compiler's error.
+- **Shaders are compiled when the app starts, not when you build.** A mistake in `Shaders.metal` or `ScenePrelude.metal` shows up only at run time, and the binary reads both from its own bundle. After every edit to either, rebuild with `./scripts/build-app.sh` and then run `--render`, which prints the compiler's error. (A scene's own `main.metal` can be tried without rebuilding: `--render out.png --scene-dir Scenes/my-scene`.)
 - **Fragment inputs need `[[stage_in]]`.**
 - **`Uniforms` is copied into the shader byte for byte.** If you add a field, add it in both places, in the same position. `swift test` checks the total size, not the order.
 - **Anything that animates must survive weeks of uptime.** Time reaches the shaders as values wrapped to a period (`wrap(elapsed * speed, 1)`), never as raw seconds. If a shader multiplies a wrapped value, the multiplier must be a whole number or the picture pops at the wrap.

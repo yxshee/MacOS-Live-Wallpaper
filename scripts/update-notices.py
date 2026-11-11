@@ -11,13 +11,23 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 STYLES = [("nature", "Nature"), ("stylised", "Stylised"), ("abstract", "Abstract"),
           ("cosy", "Cosy"), ("scifi", "Sci-Fi"), ("other", "Other")]
+KNOWN_STYLES = {key for key, _ in STYLES}
 
 
 def scenes():
     found = []
     for manifest in sorted((ROOT / "Scenes").glob("*/scene.json")):
-        data = json.loads(manifest.read_text())
+        try:
+            data = json.loads(manifest.read_text())
+        except ValueError as error:
+            sys.exit(f"{manifest.relative_to(ROOT)}: not valid JSON ({error})")
+        missing = [k for k in ("title", "author", "source", "licence") if not isinstance(data.get(k), str) or not data[k]]
+        if missing:
+            sys.exit(f"{manifest.relative_to(ROOT)}: missing {', '.join(missing)}")
         data["id"] = manifest.parent.name
+        # The app files a style it does not know under Other; so do the notices.
+        if data.get("style") not in KNOWN_STYLES:
+            data["style"] = "other"
         found.append(data)
     return found
 
@@ -68,6 +78,9 @@ def noncommercial(all_scenes):
 
 
 def main():
+    unknown = [a for a in sys.argv[1:] if a != "--check"]
+    if unknown:
+        sys.exit(f"unknown option: {' '.join(unknown)} (the only option is --check)")
     all_scenes = scenes()
     targets = {ROOT / "THIRD_PARTY_NOTICES.md": notices(all_scenes),
                ROOT / "Scenes" / "NONCOMMERCIAL.md": noncommercial(all_scenes)}

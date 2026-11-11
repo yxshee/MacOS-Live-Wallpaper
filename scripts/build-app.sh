@@ -44,13 +44,17 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 # The shaders ship as source and are compiled once at launch, so building
 # needs only the Swift compiler, not Xcode's separate Metal toolchain.
 cp Resources/Shaders.metal Resources/ScenePrelude.metal "$APP/Contents/Resources/"
+cp LICENSE "$APP/Contents/Resources/LICENSE"
 
 # The scene library. Each scene keeps its own licence file beside its shader.
 mkdir -p "$APP/Contents/Resources/Scenes"
 for scene in Scenes/*/; do
   [ -f "$scene/scene.json" ] || continue
-  if [ "$PERMISSIVE" = 1 ] && grep -Eq '"licence"[[:space:]]*:[[:space:]]*"[^"]*-NC' "$scene/scene.json"; then
-    continue
+  if [ "$PERMISSIVE" = 1 ]; then
+    # The same test the app and update-notices.py use: "-NC" anywhere in the
+    # licence, in either case. A manifest that cannot be read is left out too.
+    licence="$(plutil -extract licence raw -o - "$scene/scene.json" 2>/dev/null | tr '[:lower:]' '[:upper:]')" || licence=""
+    case "$licence" in ""|*-NC*) continue ;; esac
   fi
   cp -R "${scene%/}" "$APP/Contents/Resources/Scenes/"
 done

@@ -97,7 +97,7 @@ Measured for Horizon on an M5 Pro MacBook Pro at 4112×2658:
 
 You can reproduce the GPU figures with `--bench`; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-The imported scenes were not written with energy in mind, so each is held to a rule instead: its GPU time per frame multiplied by its frame-rate cap must come to 20 ms a second or less on the same machine, which most meet by being drawn at half resolution or lower and at 10 to 15 frames a second. They cost more than Horizon (2 to 19 ms of GPU a second, against about 1 to 2), pause the same way when hidden, and are slowed further on battery. If one still runs heavy on your Mac, the app lowers its resolution and then its frame rate by itself.
+The imported scenes were not written with energy in mind, so each is held to a rule instead: its GPU time per frame multiplied by its frame-rate cap must come to 20 ms a second or less on the same machine, which most meet by being drawn at half resolution or lower and at 10 to 15 frames a second. They cost more than Horizon (2 to 20 ms of GPU a second, against about 1 to 2), pause the same way when hidden, and are slowed further on battery. If one still runs heavy on your Mac, the app lowers its resolution and then its frame rate by itself.
 
 ## Known limits
 
@@ -127,6 +127,6 @@ Bug reports, new scenes and reports from hardware that has not been tried are al
 
 The app's own code is under the [MIT licence](LICENSE).
 
-The imported scenes keep their authors' licences: MIT, CC0, or Creative Commons Attribution-NonCommercial-ShareAlike. Each scene's folder under `Scenes/` holds its licence, its credit and a note of what was changed in porting it, and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists them together.
+The imported scenes keep their authors' licences: MIT, CC0, or Creative Commons Attribution-NonCommercial-ShareAlike. Each scene's folder under `Scenes/` holds its licence, its credit and a note of what was changed in porting it (and, where a scene uses a small helper function by someone else, that person's notice too), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists them together.
 
 Five scenes (Auroras, Heartfelt, Luminescence, Mountain Peak and Seascape) are non-commercial: free to use, share and adapt with credit, but not for commercial purposes. This app is free and carries no advertising, which is why it may include them. If you reuse this project in anything commercial, build with `./scripts/build-app.sh --permissive-only`, which leaves them out; [Scenes/NONCOMMERCIAL.md](Scenes/NONCOMMERCIAL.md) has the details.
