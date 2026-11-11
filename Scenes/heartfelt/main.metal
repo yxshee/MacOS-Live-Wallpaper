@@ -34,10 +34,12 @@
 //    no-mouse values, so rain amount and time run as the author's defaults.
 //  - Time runs at LW_RATE (60%) of real time, so the story and the drops move
 //    more slowly, which suits a desktop and keeps the quick static droplets from
-//    flickering at a low frame rate. The story clock also starts LW_START (10 s)
-//    in, so the wallpaper is already faded in when it appears, rather than
-//    opening on 10 seconds of black. The author's fades at each end of the
-//    102-second story are kept.
+//    flickering at a low frame rate. The story clock also starts LW_START (10 s) in.
+//  - The author faded the picture to black at each end of the 102-second story,
+//    which on a desktop would black out the wallpaper every three minutes. The
+//    picture is no longer faded. Instead, for the first LW_BLEND seconds of each
+//    story the end of the one before (carried on past 102 s) dissolves into it.
+//    The author's fade still shapes the lightning glow, as it did before.
 //  - The lightning flash had a fast flicker term that strobes at wallpaper frame
 //    rates. It is replaced by a gentle, much weaker glow on the same schedule.
 //  - S() is written out as the clamp-and-Hermite formula, because many calls
@@ -57,6 +59,7 @@
 
 #define LW_RATE .6
 #define LW_START 10.
+#define LW_BLEND 6.
 
 // Smoothstep with an explicit formula (edges may be given in reverse order).
 float S(float a, float b, float t) {
@@ -227,15 +230,11 @@ vec3 LwNight(vec2 uv, float lod) {
     return col;
 }
 
-void mainImage( thread vec4& fragColor, in vec2 fragCoord )
+// The author's mainImage, for a given moment T of the story.
+vec3 LwStory( vec2 fragCoord, float T )
 {
     vec2 uv = (fragCoord.xy-.5*iResolution.xy) / iResolution.y;
     vec2 UV = fragCoord.xy/iResolution.xy;
-    float T = iTime * LW_RATE;
-
-    #ifdef HAS_HEART
-    T = mod(T + LW_START, 102.);
-    #endif
 
 
     float t = T*.2;
@@ -318,9 +317,22 @@ void mainImage( thread vec4& fragColor, in vec2 fragCoord )
         fade *= S(102., 97., T);
     #endif
 
-    col *= fade;                                        // composite start and end fade
+    // the original: col *= fade;  (start and end fade to black; see the note at the top)
     #endif
 
     //col = vec3(heart);
+    return col;
+}
+
+void mainImage( thread vec4& fragColor, in vec2 fragCoord )
+{
+    float T = mod(iTime * LW_RATE + LW_START, 102.);
+    // One call site in a loop, so the compiler builds the big function once.
+    int passes = T < LW_BLEND ? 2 : 1;
+    vec3 col = vec3(0.);
+    for (int i = 0; i < passes; i++) {
+        vec3 c = LwStory(fragCoord, i == 0 ? T : T + 102.);
+        if (i == 0) col = c; else col = mix(c, col, S(0., LW_BLEND, T));
+    }
     fragColor = vec4(col, 1.);
 }

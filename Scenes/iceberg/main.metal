@@ -13,11 +13,16 @@ To the extent possible under law, the author(s) have dedicated all copyright and
 // original:
 //  - The libretro wrapper (vertex shader, uniforms, parameter pragma, main())
 //    is removed; time comes from iTime, size from iResolution.
-//  - Time runs at half the libretro speed (timeScale below; the libretro
-//    wrapper ran it at 1.5 times), so the camera drifts calmly.
-//  - The "fade" value the author computes for each camera shot, whose use was
-//    commented out at the end of RayTrace, is switched on, so the three shots
-//    dissolve through black instead of cutting.
+//  - Time runs at half real time (timeScale below), a third of the libretro
+//    wrapper's speed (which ran it at 1.5 times), so the camera drifts calmly.
+//  - The original cuts between its three camera shots (it computes a "fade"
+//    for each, but its use is commented out). Here each shot dissolves into
+//    the next: for the first lwDissolve seconds of a shot the picture is drawn
+//    a second time from the camera of the shot before, carried on past its
+//    end, and the two are blended. Nothing fades to black. To allow that, the
+//    shot is chosen in mainImage (lwShot, lwShotTime) instead of inside
+//    RayTrace, and the water's clock (localTime) is no longer wrapped with the
+//    shots, so the waves do not jump when the sequence repeats.
 //  - Out parameters of TraceOneRay are written thread T&.
 //  - The locals named cos and sin in RotateX/Y/Z are renamed (they shadow the
 //    functions in Metal).
@@ -46,7 +51,9 @@ const float timeScale = 0.5;
 float localTime = 0.0;
 
 // Animation variables
-float fade = 1.0;
+int lwShot = 0;                 // which of the three camera shots to draw
+float lwShotTime = 0.0;         // the moment in the 38-second sequence that shot is drawn for
+const float lwDissolve = 1.5;   // seconds of sequence time each dissolve lasts
 float exposure = 1.0;
 
 // lighting vars
@@ -461,8 +468,6 @@ vec3 TraceOneRay(vec3 camPos, vec3 rayVec, thread vec3& normal, thread vec3& dis
 // Output is RGB color.
 vec3 RayTrace(in vec2 fragCoord )
 {
-    fade = 1.0;
-
 	vec3 camPos = vec3(0.0), camUp = vec3(0.0, 1.0, 0.0), camLookat = vec3(0.0);
 	// ------------------- Set up the camera rays for ray marching --------------------
     // Map uv to [-1.0..1.0]
@@ -475,14 +480,12 @@ vec3 RayTrace(in vec2 fragCoord )
     const float t1 = 12.0;
     const float t2 = 20.0;
     const float t3 = 38.0;
-    // Repeat the animation after time t3
-    localTime = fract(localTime / t3) * t3;
-    if (localTime < t1)
+    // (The original repeated the animation here: localTime = fract(localTime / t3) * t3;
+    //  the port does that in mainImage, see the note at the top.)
+    if (lwShot == 0)
     {
-        float time = localTime - t0;
+        float time = lwShotTime - t0;
         float alpha = time / (t1 - t0);
-        fade = saturate(time);
-        fade *= saturate(t1 - localTime);
         camPos = vec3(0.0, 0.4, -8.0);
         camPos.x -= smoothstep(0.0, 1.0, alpha) * 2.0;
         camPos.y += smoothstep(0.0, 1.0, alpha) * 2.0;
@@ -490,12 +493,10 @@ vec3 RayTrace(in vec2 fragCoord )
         camUp=vec3(0,1,0);
         camLookat=vec3(0,-0.5,0.5);
         camLookat.y -= smoothstep(0.0, 1.0, alpha) * 0.5;
-    } else if (localTime < t2)
+    } else if (lwShot == 1)
     {
-        float time = localTime - t1;
+        float time = lwShotTime - t1;
         float alpha = time / (t2 - t1);
-        fade = saturate(time);
-        fade *= saturate(t2 - localTime);
         camPos = vec3(2.0, 4.3, -0.5);
         camPos.y -= alpha * 3.5;
         camPos.x = sin(alpha*1.0) * 9.2;
@@ -503,12 +504,10 @@ vec3 RayTrace(in vec2 fragCoord )
         camUp=normalize(vec3(0,1,-0.005 + alpha * 0.005));
         camLookat=vec3(0,-1.5,0.0);
         camLookat.y += smoothstep(0.0, 1.0, alpha) * 1.5;
-    } else if (localTime < t3)
+    } else
     {
-        float time = localTime - t2;
+        float time = lwShotTime - t2;
         float alpha = time / (t3 - t2);
-        fade = saturate(time);
-        fade *= saturate(t3 - localTime);
         camPos = vec3(-9.0, 1.3, -10.0);
         //camPos.y -= alpha * 8.0;
         camPos.x += alpha * 14.0;
@@ -559,14 +558,32 @@ vec3 RayTrace(in vec2 fragCoord )
     finalColor *= exposure;
 
 	// output the final color without gamma correction - will do gamma later.
-	return vec3(clamp(finalColor, 0.0, 1.0)*saturate(fade));
+	return vec3(clamp(finalColor, 0.0, 1.0));
 }
 
 void mainImage(thread vec4& fragColor, in vec2 fragCoord)
 {
     // Regular real-time rendering
     localTime = iTime * timeScale;
-    vec3 finalColor = RayTrace(fragCoord);
+    float sequence = fract(localTime / 38.0) * 38.0;
+    int shot = sequence < 12.0 ? 0 : (sequence < 20.0 ? 1 : 2);
+    float since = sequence - (shot == 0 ? 0.0 : (shot == 1 ? 12.0 : 20.0));
+    // One call site in a loop, so the compiler builds the big function once.
+    int passes = since < lwDissolve ? 2 : 1;
+    vec3 finalColor = vec3(0.0);
+    for (int i = 0; i < passes; i++) {
+        if (i == 0) {
+            lwShot = shot;
+            lwShotTime = sequence;
+        } else {
+            // The shot before this one, carried on past its end.
+            lwShot = shot == 0 ? 2 : shot - 1;
+            lwShotTime = shot == 0 ? sequence + 38.0 : sequence;
+        }
+        vec3 c = RayTrace(fragCoord);
+        if (i == 0) finalColor = c;
+        else finalColor = mix(c, finalColor, smoothstep(0.0, lwDissolve, since));
+    }
 
     fragColor = vec4(sqrt(clamp(finalColor, 0.0, 1.0)),1.0);
 }

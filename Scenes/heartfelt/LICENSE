@@ -21,8 +21,10 @@ top of main.metal for what was changed. In short:
     procedural picture of blurred night-city lights. That picture is ADDED BY THE
     PORT; it is not part of the original and is not the author's work.
   - Mouse input removed; time runs at 60% of real time and starts 10 seconds into
-    the author's 102-second story; the lightning flash is a gentle glow instead of
-    a flicker; a few lines were rewritten for Metal (smoothstep with reversed
+    the author's 102-second story. The author faded the picture to black at each
+    end of the story; here the picture is not faded, and for the first 6 seconds
+    of each story the end of the one before dissolves into it. The lightning
+    flash is a gentle glow instead of a flicker; a few lines were rewritten for Metal (smoothstep with reversed
     edges, a vignette expression with an unordered side effect, the output
     parameter).
   - The author's algorithm, constants and look are otherwise unchanged.

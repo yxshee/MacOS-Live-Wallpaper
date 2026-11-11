@@ -41,6 +41,8 @@
 //     the stars, mountains and glare spikes keep their size relative to the picture at
 //     any resolution. The sun still sits at 0.58 / 0.56 of the width / height.
 //   - The scene clock is iTime wrapped at one day; the star twinkle uses it too.
+//   - Venus and the second planet are never drawn narrower than about one pixel
+//     (minVar in the planet code), so they do not flicker at a low resolution.
 //   - GLSL-isms for our wrapper: constants are #defines, the SunFrame struct and the
 //     inline/constant qualifiers are gone, output parameters are thread references.
 // The look, the timing and every constant of the picture are the author's.

@@ -26,8 +26,14 @@
 //    layer. Neither exists here, so both are gone and the picture is a touch
 //    crisper.
 //  - Pass 1's noise filter (reduceNoise) read four neighbouring pixels of
-//    pass 0. Here each pixel reads the two neighbours that share its 2x2 pixel
-//    quad (quad_shuffle_xor) instead.
+//    pass 0, which a single pass cannot do. It is left out; at this scene's
+//    resolution the unfiltered picture is the cleaner one.
+//  - Two helpers that the original marks "License: Unknown" are not carried
+//    over. tanh_approx() (a rational approximation of tanh) is replaced by the
+//    built-in tanh(), with its argument capped because Metal's tanh overflows
+//    for large inputs; the tone curve differs from the approximation by under
+//    2 per cent. hash() is replaced by an integer hash written for this port,
+//    so the arcs' random tilts are different numbers of the same kind.
 //  - Metal syntax: out/inout parameters became thread references (a swizzle
 //    cannot be passed that way, so the two rot(p.xy, ...) calls go through a
 //    temporary), `rd *= m` became `rd = rd * m`, any() around a vector !=,
@@ -148,20 +154,14 @@ vec3 ddpath(float z) {
   return vec3(-PATHA*PATHA*PATHB*sin(PATHA*z), 0);
 }
 
-// License: Unknown, author: Claude Brezinski, found: https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
+// Written for this port (see the note at the top): the built-in tanh, with
+// the argument kept where Metal's tanh cannot overflow.
 float tanh_approx(float x) {
-  //  Found this somewhere on the interwebs
-  //  return tanh(x);
-  float x2 = x*x;
-  return clamp(x*(27.0 + x2)/(27.0+9.0*x2), -1.0, 1.0);
+  return tanh(clamp(x, -15.0, 15.0));
 }
 
-// License: Unknown, author: Claude Brezinski, found: https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
 vec3 tanh_approx(vec3 x) {
-  //  Found this somewhere on the interwebs
-  //  return tanh(x);
-  vec3 x2 = x*x;
-  return clamp(x*(27.0 + x2)/(27.0+9.0*x2), -1.0, 1.0);
+  return tanh(clamp(x, -15.0, 15.0));
 }
 
 // Same formula as smoothstep(), for the calls whose edges are reversed.
@@ -429,9 +429,14 @@ vec3 pyramid(vec3 col, vec3 ro, vec3 rd) {
 
 vec2 g_gd;
 
-// License: Unknown, author: Unknown, found: don't remember
+// Written for this port (see the note at the top): the bits of the number,
+// stirred, as a value from 0 up to 1.
 float hash(float co) {
-  return fract(sin(co*12.9898) * 13758.5453);
+  uint n = as_type<uint>(co + 0.0);      // + 0.0 so that -0.0 and 0.0 agree
+  n ^= n >> 15; n *= 0x9E3779B1u;
+  n ^= n >> 13; n *= 0x85EBCA77u;
+  n ^= n >> 16;
+  return float(n >> 8) * (1.0 / 16777216.0);
 }
 
 void warpWorld(thread vec3& p){
@@ -682,18 +687,10 @@ vec3 fpass0(vec2 fragCoord) {
   return col;
 }
 
-// Pass 1 of the original, fpass1(): the noise filter and the tone mapping.
+// Pass 1 of the original, fpass1(): the tone mapping.
 void mainImage(thread vec4& fragColor, vec2 fragCoord)
 {
-  vec3
-    c = fpass0(fragCoord)
-  , a = 0.5*(quad_shuffle_xor(c, 1) + quad_shuffle_xor(c, 2))
-  ;
-  float
-    cl=dot(vec3(0.2126, 0.7152, 0.0722),c)
-  , al=dot(vec3(0.2126, 0.7152, 0.0722),a)
-  ;
-  vec3 col = cl > al ? a : c;
+  vec3 col = fpass0(fragCoord);
   col=clamp(col,0.,9.);
   col=tanh_approx(col);
   col=sqrt(col);

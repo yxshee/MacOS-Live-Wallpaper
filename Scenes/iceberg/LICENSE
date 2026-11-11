@@ -25,12 +25,14 @@ top of main.metal for what was changed. In short:
 
   - The libretro wrapper (vertex shader, uniforms, parameter pragma, main()) is
     removed; time comes from iTime and the size from iResolution.
-  - Animation runs at half the libretro speed (the libretro wrapper ran it at
-    1.5 times Shadertoy speed; here it is 0.5 times), so the camera drifts
-    calmly on a desktop.
-  - The "fade" value the author computes for each of the three camera shots,
-    whose use was commented out at the end of RayTrace, is switched on, so the
-    shots dissolve through black instead of cutting.
+  - Animation runs at half real time, a third of the libretro speed (the
+    libretro wrapper ran it at 1.5 times; here it is 0.5 times), so the camera
+    drifts calmly on a desktop.
+  - The original cuts between its three camera shots. Here each shot dissolves
+    into the next: for the first 1.5 seconds of a shot the picture is also
+    drawn from the previous shot's camera, carried on past its end, and the two
+    are blended. The shot is therefore chosen in mainImage rather than inside
+    RayTrace, and the water's clock is no longer wrapped with the shots.
   - Out parameters are written thread T&; the locals named cos and sin in
     RotateX/Y/Z are renamed; variables are initialised.
   - The author's disabled options (non-realtime HQ renderer, manual camera,
@@ -43,7 +45,7 @@ top of main.metal for what was changed. In short:
     the plain port, fewer than 0.02% of pixels differ by more than 2/255.
   - No images or other assets are used or shipped.
 
-Apart from the items listed above (slower time, the fade between shots, the
+Apart from the items listed above (slower time, the dissolve between shots, the
 removed options), the shader's maths, constants, camera path and colours are
 the author's.
 

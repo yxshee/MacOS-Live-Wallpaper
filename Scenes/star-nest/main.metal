@@ -3,7 +3,7 @@
 // This content is under the MIT License.
 //
 // Ported to Metal Shading Language for MacOS Live Wallpaper. Changes from the
-// original: the output parameter's declaration, and the two swizzled matrix
+// original: the output parameter's declaration, and the four swizzled matrix
 // multiplications written out. The maths is untouched.
 
 #define iterations 17

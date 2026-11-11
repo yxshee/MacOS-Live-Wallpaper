@@ -98,6 +98,9 @@ float fbm2(vec2 p) {
 
 // Triangular-PDF ordered dither, ~+-1 LSB at 8-bit, to break up banding in the
 // smooth dark water gradient.
+// ditherHash is hash12 from "Hash without Sine", https://www.shadertoy.com/view/4djSRW,
+// Copyright (c)2014 David Hoskins, MIT License (his notice is in the LICENSE file).
+// The original file does not name him; the credit is restored here.
 float ditherHash(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);

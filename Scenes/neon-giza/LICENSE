@@ -37,11 +37,11 @@ work; it does not change the terms of these pieces, which stay as he labelled th
                                   https://stackoverflow.com/a/17897228/418488
   pmin, flatTorus, cappedTorus,   MIT, by Inigo Quilez
   arc, triIso, rayBox             https://iquilezles.org/
-  tanh_approx                     "License: Unknown", Claude Brezinski, found at
-                                  https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
-                                  (a short rational approximation of tanh)
-  hash                            "License: Unknown, author: Unknown, found: don't
-                                  remember" (a one-line sine-and-fract hash)
+
+Two more helpers in the original, tanh_approx and hash, are marked there
+"License: Unknown". They are NOT in this port: tanh_approx is replaced by the
+built-in tanh() and hash by an integer hash written for the port. Both
+replacements are offered under CC0-1.0 like the rest.
 
 The MIT terms, for the pieces by Inigo Quilez (the copyright holder named is the
 one in the author's comments; the iquilezles.org pages did not load when this was

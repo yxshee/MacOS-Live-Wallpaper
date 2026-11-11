@@ -14,6 +14,15 @@ functions are credited by the author to other people: a hash function (Dave
 Hoskins), smooth min / max (Inigo Quilez) and pModPolar (hg_sdf, mercury.sexy).
 The author's header applies the licence above to the file as a whole.
 
+A note on the first of those credits. The hash N31() is marked in the author's
+comment as "DAVE HOSKINS" (his "Hash without Sine", in the same early form the
+same author uses in Heartfelt). A copy of Dave Hoskins' own shader found in a
+third-party archive carries a Creative Commons Attribution-ShareAlike 4.0
+header, a different licence from this shader's, and that could not be checked
+against the Shadertoy page itself. The function is a few lines of arithmetic
+and is kept exactly as the author wrote it; Scenes/heartfelt/LICENSE gives the
+details, and anyone who needs to can replace it with another hash.
+
 Ported to Metal Shading Language for MacOS Live Wallpaper. This port is an
 adaptation of the original shader and is offered under the same licence,
 Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported. It may not
