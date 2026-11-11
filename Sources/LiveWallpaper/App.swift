@@ -41,6 +41,9 @@ final class WallpaperWindow {
     let window: NSWindow
     private(set) var scene: SceneHost?
     private var video: VideoView?
+    /// False while a shader scene is still compiling: the window is kept
+    /// invisible until it has a picture, so it never shows as a black rectangle.
+    private(set) var revealed = true
 
     /// Returns nil rather than a window with nothing to show: a bare window at
     /// this level would be a black rectangle over the user's real wallpaper.
@@ -49,6 +52,8 @@ final class WallpaperWindow {
           onFirstFrame: @escaping (String) -> Void) {
         let bounds = NSRect(origin: .zero, size: screen.frame.size)
         let content: NSView
+        var shaderView: ShaderSceneView?
+        var shaderID = ""
         if sceneID == videoSceneID, let url = videoURL {
             let v = VideoView(frame: bounds, url: url, onFailure: onVideoFailure)
             video = v
@@ -64,7 +69,9 @@ final class WallpaperWindow {
                 guard let shader = ShaderScene(descriptor) else { return nil }
                 let s = ShaderSceneView(frame: bounds, scene: shader)
                 s.onFailure = { reason in onSceneFailure(descriptor.id, reason) }
-                s.onFirstFrame = { onFirstFrame(descriptor.id) }
+                shaderView = s
+                shaderID = descriptor.id
+                revealed = false
                 scene = s
                 content = s
             }
@@ -82,6 +89,16 @@ final class WallpaperWindow {
         window.backgroundColor = .black
         window.setFrame(screen.frame, display: false)
         window.contentView = content
+        if let shaderView {
+            // The shader compiles in the background and reports on the main
+            // thread, so this is set before it can possibly fire.
+            window.alphaValue = 0
+            shaderView.onFirstFrame = { [weak self] in
+                self?.revealed = true
+                self?.window.alphaValue = 1
+                onFirstFrame(shaderID)
+            }
+        }
         window.orderFrontRegardless()
     }
 
@@ -110,6 +127,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static let repository = "https://github.com/yxshee/MacOS-Live-Wallpaper"
 
     private var windows: [WallpaperWindow] = []
+    private var outgoing: [WallpaperWindow] = []    // retired, still showing their last frame until the new ones can draw
+    private var proven = Set<String>()              // shader scenes that have drawn in this run
     private var builtFor = ""                       // screens and scene the current windows were made for
     private var statusItem: NSStatusItem!
     private let defaults = UserDefaults.standard
@@ -210,20 +229,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let wanted = signature()
         guard wanted != builtFor else { return }
         builtFor = wanted
+        closeOutgoing()
         let old = windows
         old.forEach { $0.retire() }
         let c = choice, url = videoURL
-        // A shader scene is on trial from here until the GPU has drawn one frame of it.
-        if case .shader? = SceneRegistry.shared.scene(c)?.source { defaults.set(c, forKey: "sceneOnTrial") }
-        else { defaults.removeObject(forKey: "sceneOnTrial") }
         windows = NSScreen.screens.compactMap { screen in
             WallpaperWindow(screen: screen, sceneID: c, videoURL: url,
                             onVideoFailure: { [weak self] failed, reason in self?.videoFailed(failed, reason) },
                             onSceneFailure: { [weak self] id, reason in self?.sceneFailed(id, reason) },
                             onFirstFrame: { [weak self] id in self?.sceneDrew(id) })
         }
-        old.forEach { $0.close() }
+        // A shader scene is on trial from here until the GPU has drawn one
+        // frame of it; one that has already drawn in this run has nothing to prove.
+        var onTrial = false
+        if case .shader? = SceneRegistry.shared.scene(c)?.source { onTrial = !windows.isEmpty && !proven.contains(c) }
+        if onTrial { defaults.set(c, forKey: "sceneOnTrial") } else { defaults.removeObject(forKey: "sceneOnTrial") }
+        if windows.allSatisfy(\.revealed) {
+            old.forEach { $0.close() }
+        } else {
+            // The new windows are still compiling. The old ones stay up until
+            // every new one has a picture, or for ten seconds at the most.
+            outgoing = old
+            perform(#selector(closeOutgoing), with: nil, afterDelay: 10, inModes: [.common])
+        }
         updatePlayback()
+    }
+
+    @objc private func closeOutgoing() {
+        NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(closeOutgoing), object: nil)
+        outgoing.forEach { $0.close() }
+        outgoing = []
     }
 
     // Draw only what can be seen: a wallpaper fully covered by other windows,
@@ -269,7 +304,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// launch finds the mark and goes back to Horizon instead of trying again
     /// (which matters for a login item: a scene that hangs must not hang every login).
     private func sceneDrew(_ id: String) {
+        proven.insert(id)
         if defaults.string(forKey: "sceneOnTrial") == id { defaults.removeObject(forKey: "sceneOnTrial") }
+        if windows.allSatisfy(\.revealed) { closeOutgoing() }
     }
 
     private func sceneFailed(_ id: String, _ reason: String) {
@@ -279,6 +316,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         choice = "horizon"
         rebuild()
         alert("\(title) can't be shown", "\(reason)\n\nThe wallpaper has gone back to Horizon.")
+    }
+
+    @objc private func showSceneProblems() {
+        alert("Some scene folders could not be loaded",
+              SceneRegistry.shared.problems.joined(separator: "\n")
+              + "\n\nFix the folder and start Live Wallpaper again. docs/SHADERS.md in the project describes the format.")
     }
 
     private func alert(_ title: String, _ text: String) {
@@ -328,6 +371,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         add(menu, current == videoSceneID ? "Video: \(videoURL?.lastPathComponent ?? "")" : "Video…",
             #selector(chooseVideo)).state = current == videoSceneID ? .on : .off
+        if !registry.problems.isEmpty {
+            let count = registry.problems.count
+            add(menu, count == 1 ? "1 Scene Could Not Be Loaded…" : "\(count) Scenes Could Not Be Loaded…", #selector(showSceneProblems))
+        }
         if let scene = registry.scene(current), !SceneRegistry.reserved.contains(current) {
             menu.addItem(.separator())
             let credit = NSMenuItem(title: scene.credit, action: nil, keyEquivalent: "")

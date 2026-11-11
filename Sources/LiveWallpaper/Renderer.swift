@@ -66,7 +66,7 @@ final class Renderer {
             ridgePipeline = try pipeline("ridgeFragment", .bgra8Unorm)
             presentPipeline = try pipeline("presentFragment", .bgra8Unorm)
         } catch {
-            NSLog("LiveWallpaper: shader setup failed: \(error)")
+            NSLog("%@", "LiveWallpaper: shader setup failed: \(error)")
             Renderer.failure = "The shaders could not be compiled: \(error.localizedDescription)"
             return nil
         }

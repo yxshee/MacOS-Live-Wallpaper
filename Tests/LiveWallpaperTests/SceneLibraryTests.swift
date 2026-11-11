@@ -24,7 +24,7 @@ final class FramePolicyTests: XCTestCase {
             let lively = FramePolicy.rate(c, hint: .lively), moving = FramePolicy.rate(c, hint: .moving)
             XCTAssertEqual(still, 1)
             XCTAssertLessThanOrEqual(still, slow)
-            XCTAssertLessThanOrEqual(slow, max(lively, 10))
+            XCTAssertLessThanOrEqual(slow, lively)
             XCTAssertLessThanOrEqual(lively, moving)
         }
     }
@@ -42,6 +42,25 @@ final class FramePolicyTests: XCTestCase {
             XCTAssertLessThanOrEqual(FramePolicy.rate(C(saving: true, desktopInFront: true), hint: hint), 5)
         }
         XCTAssertEqual(FramePolicy.rate(C(saving: true), hint: .still), 1)
+    }
+
+    func testASceneAskingForMoreThanTwentyGetsItOnlyWhenWatchedOnMainsPower() {
+        XCTAssertEqual(FramePolicy.sceneRate(C(desktopInFront: true), maxFPS: 60), 60)
+        XCTAssertEqual(FramePolicy.sceneRate(C(desktopInFront: true), maxFPS: 30), 30)
+        XCTAssertEqual(FramePolicy.sceneRate(C(), maxFPS: 30), 15)
+        XCTAssertEqual(FramePolicy.sceneRate(C(onBattery: true), maxFPS: 30), 9)
+        XCTAssertEqual(FramePolicy.sceneRate(C(saving: true, desktopInFront: true), maxFPS: 60), 5)
+        for cap in [Float(1), 5, 10, 15, 20] {
+            for c in [C(), C(onBattery: true), C(desktopInFront: true), C(saving: true)] {
+                XCTAssertEqual(FramePolicy.sceneRate(c, maxFPS: cap), FramePolicy.rate(c, hint: .lively, cap: cap))
+            }
+        }
+        for cap in stride(from: Float(1), through: 60, by: 1) {
+            let watched = FramePolicy.sceneRate(C(desktopInFront: true), maxFPS: cap)
+            XCTAssertLessThanOrEqual(watched, cap)
+            XCTAssertLessThanOrEqual(FramePolicy.sceneRate(C(), maxFPS: cap), watched)
+            XCTAssertLessThanOrEqual(FramePolicy.sceneRate(C(onBattery: true, desktopInFront: true), maxFPS: cap), watched)
+        }
     }
 
     func testASceneCanAskForLessButNeverLessThanOne() {
@@ -135,7 +154,26 @@ final class SceneRegistryTests: XCTestCase {
     }
 
     func testShaderUniformsMatchThePrelude() {
-        // LWUniforms in ScenePrelude.metal: five float4, one int4, two float4.
+        // LWUniforms in ScenePrelude.metal: five float4, one int4, two float4, in this order.
         XCTAssertEqual(MemoryLayout<LWUniforms>.stride, 8 * 16)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.resolution), 0)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.time), 16)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.date), 32)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.sky), 48)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.pointer), 64)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.frame), 80)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.channelRes0), 96)
+        XCTAssertEqual(MemoryLayout<LWUniforms>.offset(of: \.channelRes1), 112)
+        let prelude = try? String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/ScenePrelude.metal"), encoding: .utf8)
+        let fields = ["resolution", "time", "date", "sky", "pointer", "frame", "channelRes"]
+        var cursor = prelude?.range(of: "struct LWUniforms")?.upperBound
+        XCTAssertNotNil(cursor, "ScenePrelude.metal no longer declares LWUniforms")
+        for field in fields {
+            guard let text = prelude, let from = cursor, let found = text.range(of: " \(field)", range: from..<text.endIndex) else {
+                return XCTFail("LWUniforms in the prelude has no \(field) after the fields before it")
+            }
+            cursor = found.upperBound
+        }
     }
 }

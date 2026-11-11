@@ -129,6 +129,14 @@ final class SceneRegistry {
         guard channels.count <= 2, channels.allSatisfy({ !$0.contains("/") && !$0.hasPrefix(".") }) else {
             return .failure(Problem(message: "channels may list at most two files inside the scene folder"))
         }
+        for name in channels {
+            guard let size = ShaderScene.pixelSize(of: folder.appendingPathComponent(name)) else {
+                return .failure(Problem(message: "\(name) is missing or is not an image"))
+            }
+            guard max(size.width, size.height) <= ShaderScene.maxChannelSide else {
+                return .failure(Problem(message: "\(name) is \(size.width)×\(size.height); images may be at most \(ShaderScene.maxChannelSide) pixels a side"))
+            }
+        }
         return .success(SceneDescriptor(
             id: id, title: manifest.title, author: manifest.author ?? "", sourceURL: manifest.source ?? "",
             licence: manifest.licence, style: SceneDescriptor.Style(rawValue: manifest.style ?? "") ?? .other,

@@ -41,6 +41,18 @@ enum Headless {
             print(usage)
             exit(unknown.isEmpty ? 0 : 2)
         }
+        // Every option but these four takes a value, and a missing or
+        // unreadable one is an error rather than a silent default.
+        let bare: Set<String> = ["--help", "--check-scenes", "--list-scenes"]
+        for flag in known.subtracting(bare) where args.contains(flag) {
+            guard let v = value(flag), !v.hasPrefix("--") else { fail("\(flag) needs a value (see --help)") }
+            if args.filter({ $0 == flag }).count > 1 { fail("\(flag) was given more than once") }
+        }
+        for flag in ["--t", "--hour", "--cloud", "--aurora", "--meteor", "--parallax", "--scale", "--lat", "--lon"] {
+            if let v = value(flag), !(Double(v)?.isFinite ?? false) { fail("\(flag) must be a number, not \(v)") }
+        }
+        if let v = value("--bench"), (Int(v) ?? 0) < 1 { fail("--bench must be a whole number of frames, 1 or more") }
+        if args.contains("--scene"), args.contains("--scene-dir") { fail("Pass --scene or --scene-dir, not both") }
         if args.contains("--list-scenes") {
             for s in SceneRegistry.shared.scenes {
                 print("\(s.id)\t\(s.style.rawValue)\t\(s.licence)\t\(s.credit)")

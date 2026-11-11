@@ -34,7 +34,9 @@ final class ShaderSceneView: NSView, SceneHost {
     private var frameCount = 0
 
     private var pixelsPerPoint: CGFloat         // lowered by the governor if the scene is too heavy
-    private var overBudget = 0
+    private var overBudget = 0, underBudget = 0
+    private var fullRate: Float = 0             // the rate asked for before any throttling
+    private var failedFrames = 0
     private var throttled = false               // resolution is at its floor and the scene is still heavy
     private var gpuMillis = 0.0
     private(set) var fps: Float = 0
@@ -43,7 +45,7 @@ final class ShaderSceneView: NSView, SceneHost {
     var onFailure: ((String) -> Void)?
     /// Called once, after the first frame has really been drawn by the GPU.
     var onFirstFrame: (() -> Void)?
-    private var reportedFirstFrame = false
+    private var confirmedFirstFrame = false     // the GPU has finished one frame without error
     private static let logStats = ProcessInfo.processInfo.environment["LW_STATS"] != nil
 
     var playing = false {
@@ -128,8 +130,8 @@ final class ShaderSceneView: NSView, SceneHost {
         elapsed = ShaderScene.fold(elapsed + delta, limit: ShaderScene.timeLimit)   // a visible cut, once an hour, only if never hidden
 
         let conditions = Conditions.shared
-        var want = FramePolicy.rate(conditions.framePolicy, hint: .lively, cap: scene.descriptor.maxFPS)
-        if throttled { want = min(want, 5) }
+        fullRate = FramePolicy.sceneRate(conditions.framePolicy, maxFPS: scene.descriptor.maxFPS)
+        let want = throttled ? min(fullRate, 5) : fullRate
         if want != fps {
             fps = want
             link?.preferredFrameRateRange = CAFrameRateRange(minimum: want, maximum: want, preferred: want)
@@ -155,14 +157,13 @@ final class ShaderSceneView: NSView, SceneHost {
         renderer.encodePresent(buffer, source: target, target: drawable.texture)
 
         frameCount += 1
-        let first = !reportedFirstFrame
-        if first || frameCount % 8 == 0 {
+        // Every frame is watched until one has succeeded, then every eighth.
+        if !confirmedFirstFrame || frameCount % 8 == 0 {
             buffer.addCompletedHandler { [weak self] b in
                 let ms = (b.gpuEndTime - b.gpuStartTime) * 1000
                 let failed = b.status == .error
-                DispatchQueue.main.async { self?.frameFinished(gpuMillis: ms, failed: failed, first: first) }
+                DispatchQueue.main.async { self?.frameFinished(gpuMillis: ms, failed: failed) }
             }
-            reportedFirstFrame = true
         }
         buffer.present(drawable)
         buffer.commit()
@@ -179,24 +180,62 @@ final class ShaderSceneView: NSView, SceneHost {
 
     /// The governor. GPU milliseconds per second is the cost that matters; a
     /// scene that stays over budget loses resolution first, then frame rate.
-    private func frameFinished(gpuMillis ms: Double, failed: Bool, first: Bool) {
+    private func frameFinished(gpuMillis ms: Double, failed: Bool) {
         if failed {
-            onFailure?("The graphics driver rejected this scene's frames.")
-            onFailure = nil
+            // One rejected frame proves little (the GPU refuses work from a
+            // session that is switched out, for one); three in a row while
+            // really playing means this scene cannot be drawn here.
+            guard playing else { return }
+            failedFrames += 1
+            if failedFrames >= 3 {
+                onFailure?("The graphics driver rejected this scene's frames.")
+                onFailure = nil
+            } else {
+                needsFrame = true
+            }
             return
         }
-        if first { onFirstFrame?() }
+        failedFrames = 0
+        if !confirmedFirstFrame {
+            // The first frame includes one-off set-up, so it says nothing about the scene's cost.
+            confirmedFirstFrame = true
+            onFirstFrame?()
+            onFirstFrame = nil
+            return
+        }
         gpuMillis = ms
+        guard playing else { overBudget = 0; underBudget = 0; return }
         let budget: Double = Conditions.shared.onBattery ? 60 : 120
-        guard playing, ms * Double(fps) > budget else { overBudget = 0; return }
-        overBudget += 1
-        guard overBudget >= 3 else { return }
+        if ms * Double(fps) > budget {
+            underBudget = 0
+            overBudget += 1
+            guard overBudget >= 3 else { return }
+            overBudget = 0
+            if pixelsPerPoint > 0.26 {
+                pixelsPerPoint = max(0.25, pixelsPerPoint * 0.75)
+                target = nil
+            } else {
+                throttled = true
+            }
+            return
+        }
         overBudget = 0
-        if pixelsPerPoint > 0.26 {
-            pixelsPerPoint = max(0.25, pixelsPerPoint * 0.75)
-            target = nil
+        // The way back up. A step up in resolution costs about 1.8 times as
+        // much, and lifting the throttle multiplies the frame rate, so climb
+        // only when what the scene would cost afterwards is under half the
+        // budget, and only after it has stayed that way for a while (a brief
+        // squeeze from another app must not leave the wallpaper degraded for good).
+        let scale = CGFloat(scene.descriptor.scale)
+        let after = throttled ? ms * Double(fullRate) : ms * Double(fps) / (0.75 * 0.75)
+        guard throttled || pixelsPerPoint < scale, after < budget / 2 else { underBudget = 0; return }
+        underBudget += 1
+        guard underBudget >= 12 else { return }
+        underBudget = 0
+        if throttled {
+            throttled = false
         } else {
-            throttled = true
+            pixelsPerPoint = min(scale, pixelsPerPoint / 0.75)
+            target = nil
         }
     }
 }

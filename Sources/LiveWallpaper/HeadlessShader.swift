@@ -118,7 +118,12 @@ enum HeadlessShader {
             print(String(format: "%@: %.3f ms per frame (drawn at %d×%d, shown at %d×%d)",
                          descriptor.id, o.gpuMillis, Int(o.drawn.width), Int(o.drawn.height), width, height))
         }
-        if let path, let image = o.image { Snapshot.write(image, to: path) }
+        if let path {
+            guard let image = o.image, Snapshot.write(image, to: path) else {
+                FileHandle.standardError.write(Data("\(path) could not be written\n".utf8))
+                exit(1)
+            }
+        }
         if !o.varied { FileHandle.standardError.write(Data("\(descriptor.id): the frame is a single flat colour\n".utf8)) }
         exit(o.varied ? 0 : 1)
     }
@@ -141,8 +146,11 @@ enum HeadlessShader {
             print(String(format: "%@  %-28@ %6.3f ms/frame at %4d×%-4d  ×%2.0f fps = %5.1f ms/s  %@",
                          o.varied ? "ok  " : "FLAT", d.id as NSString, o.gpuMillis, Int(o.drawn.width), Int(o.drawn.height),
                          d.maxFPS, o.gpuMillis * Double(d.maxFPS), d.licence as NSString))
-            if let previews, let image = o.image, let small = shrink(image, width: 640) {
-                Snapshot.write(small, to: "\(previews)/\(d.id).jpg")
+            if let previews {
+                let path = "\(previews)/\(d.id).jpg"
+                if let image = o.image, let small = shrink(image, width: 640), Snapshot.write(small, to: path) {} else {
+                    failures.append("\(path) could not be written")
+                }
             }
         }
         for f in failures { FileHandle.standardError.write(Data((f + "\n").utf8)) }

@@ -36,6 +36,16 @@ enum FramePolicy {
         }
         return max(1, min(rate, cap))
     }
+
+    /// The pace of an imported shader scene whose manifest allows `maxFPS`.
+    /// Up to 20 it is the lively row, capped. A scene that asks for more gets
+    /// it only when the user is looking at the desktop on mains power, and the
+    /// same share of it as any other scene otherwise.
+    static func sceneRate(_ c: Conditions, maxFPS: Float) -> Float {
+        let lively = rate(c, hint: .lively)
+        guard !c.saving, maxFPS > 20 else { return max(1, min(lively, maxFPS)) }
+        return max(1, min(lively * maxFPS / 20, 60))
+    }
 }
 
 extension Conditions {

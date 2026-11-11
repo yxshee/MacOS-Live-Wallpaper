@@ -1,6 +1,7 @@
 import Foundation
 import Metal
 import MetalKit
+import ImageIO
 import simd
 
 /// Matches `LWUniforms` in ScenePrelude.metal field for field.
@@ -45,6 +46,16 @@ final class ShaderScene {
             float3 iChannelResolution[2];
             texture2d<float> iChannel0; texture2d<float> iChannel1;
             float lwSunElevation; float lwSunAzimuth; float lwDaylight; float lwMoon;
+            // smoothstep as GLSL shaders rely on it. Metal leaves the built-in
+            // undefined when the edges are given high-then-low, which GLSL code
+            // does all the time; this is the plain formula, the same either way round.
+            float  smoothstep(float a, float b, float x)    { float  t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+            float2 smoothstep(float2 a, float2 b, float2 x) { float2 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+            float3 smoothstep(float3 a, float3 b, float3 x) { float3 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+            float4 smoothstep(float4 a, float4 b, float4 x) { float4 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+            float2 smoothstep(float a, float b, float2 x)   { float2 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+            float3 smoothstep(float a, float b, float3 x)   { float3 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+            float4 smoothstep(float a, float b, float4 x)   { float4 t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
         #line 1 "main.metal"
         \(scene)
         };
@@ -136,6 +147,35 @@ final class ShaderScene {
         }
     }
 
+    /// The largest image a scene may bind, on its longer side. Bigger ones
+    /// are refused: decoding happens on the main thread, once per display.
+    static let maxChannelSide = 4096
+
+    /// An image's size from its header, without decoding it.
+    static func pixelSize(of url: URL) -> (width: Int, height: Int)? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int, width > 0, height > 0 else { return nil }
+        return (width, height)
+    }
+
+    /// A grey-scale image loads as a one-channel texture, which a shader would
+    /// read as red only. GLSL shaders expect grey in all three, so present it that way.
+    static func asColour(_ texture: MTLTexture) -> MTLTexture {
+        let swizzle: MTLTextureSwizzleChannels
+        switch texture.pixelFormat {
+        case .r8Unorm, .r16Unorm, .r16Float, .r32Float:
+            swizzle = MTLTextureSwizzleChannels(red: .red, green: .red, blue: .red, alpha: .one)
+        case .rg8Unorm, .rg16Unorm:                                  // grey with alpha
+            swizzle = MTLTextureSwizzleChannels(red: .red, green: .red, blue: .red, alpha: .green)
+        default:
+            return texture
+        }
+        return texture.makeTextureView(pixelFormat: texture.pixelFormat, textureType: texture.textureType,
+                                       levels: 0..<texture.mipmapLevelCount, slices: 0..<1, swizzle: swizzle) ?? texture
+    }
+
     /// Both texture slots are always bound: a 1×1 black texture stands in for a missing one.
     private func loadChannels(_ renderer: Renderer) {
         let loader = MTKTextureLoader(device: renderer.device)
@@ -144,9 +184,15 @@ final class ShaderScene {
             var texture = renderer.blackTexture
             if i < descriptor.channels.count {
                 let url = folder.appendingPathComponent(descriptor.channels[i])
-                if let loaded = try? loader.newTexture(URL: url, options: [
+                if let size = ShaderScene.pixelSize(of: url), max(size.width, size.height) <= ShaderScene.maxChannelSide,
+                   let loaded = try? loader.newTexture(URL: url, options: [
                     .SRGB: false, .generateMipmaps: true, .origin: MTKTextureLoader.Origin.bottomLeft,
-                ]) { texture = loaded } else { NSLog("LiveWallpaper: \(descriptor.id): could not load \(descriptor.channels[i])") }
+                   ]) {
+                    texture = ShaderScene.asColour(loaded)
+                } else {
+                    // "%@", never the name itself as the format: a file name may contain a per cent sign.
+                    NSLog("%@", "LiveWallpaper: \(descriptor.id): could not load \(descriptor.channels[i])")
+                }
             }
             channels.append(texture)
             channelSizes[i] = V4(Float(texture.width), Float(texture.height), 1, 0)
