@@ -257,7 +257,11 @@ final class ShaderScene {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .autoupdatingCurrent
         let c = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: date)
-        let seconds = Float((c.hour ?? 0) * 3600 + (c.minute ?? 0) * 60 + (c.second ?? 0)) + Float(c.nanosecond ?? 0) / 1e9
+        // In small typed steps: older Swift compilers give up on this as one expression.
+        let hour: Int = c.hour ?? 0, minute: Int = c.minute ?? 0, second: Int = c.second ?? 0
+        let whole: Int = hour * 3600 + minute * 60 + second
+        let fraction: Float = Float(c.nanosecond ?? 0) / 1_000_000_000
+        let seconds: Float = Float(whole) + fraction
         u.date = V4(Float(c.year ?? 2000), Float((c.month ?? 1) - 1), Float(c.day ?? 1), seconds)
         let sky = Astro.sky(at: date, latitude: place.latitude, longitude: place.longitude)
         let e = Float(sky.sun.elevation)
