@@ -59,9 +59,25 @@ Two environment variables help when testing the real app. Start the binary from 
 | `NoiseBake.swift` | The noise texture baked at launch. |
 | `Math.swift` | Small vector and easing helpers. |
 | `main.swift` | Entry point: any `--flag` draws off screen, otherwise the menu-bar app starts. |
-| `Resources/Shaders.metal` | All the drawing. |
+| `Resources/Shaders.metal` | All the drawing for the built-in scenes. |
+| `SceneRegistry.swift` | Finds scene folders and reads their manifests. |
+| `ShaderScene.swift`, `ShaderSceneView.swift` | Compile and show a scene that is one fragment shader. |
+| `FramePolicy.swift` | The one table that sets frames a second for every kind of scene. |
+| `Resources/ScenePrelude.metal` | What every shader scene is given: inputs and GLSL-style names. |
+| `Scenes/` | The scene library. One folder per scene, each with its own licence. |
 
 A frame is three passes: a soft sky at a quarter of the sky's resolution, the sky layer at one pixel per point (the soft sky plus stars, sun and moon), and a Retina ridge layer drawn only when it would look different.
+
+## Adding a scene
+
+A scene is a folder with a shader, a manifest and a licence file; nothing in the app's code needs to change. [docs/SHADERS.md](docs/SHADERS.md) covers the format, how to port a GLSL shader, how to check it off screen and what it is allowed to cost. Then:
+
+```bash
+python3 scripts/update-notices.py     # regenerate the credits
+./scripts/check-scenes.sh             # compile, draw and cost every scene; refresh previews
+```
+
+Only bring in work whose author's licence allows it to be redistributed, and say where that licence is stated.
 
 ## Things that will catch you out
 
